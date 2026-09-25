@@ -1,17 +1,18 @@
 {
   "name": "pacific-gym",
-  "version": "0.1.0+codex.20260925192613",
-  "description": "Prove each step from generated GLB to an Isaac Sim robot candidate",
+  "version": "0.1.0+codex.20260925215034",
+  "description": "Generate and review motion keyframes, then prepare and verify an Isaac Sim robot candidate",
   "author": {
     "name": "Lucky9 Labs",
     "url": "https://github.com/Lucky9-Labs"
   },
   "repository": "https://github.com/Lucky9-Labs/pacific-gym",
   "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
   "interface": {
     "displayName": "Pacific Gym",
-    "shortDescription": "Build and verify physics-ready 3D assets",
-    "longDescription": "Inspect immutable 3D sources and collect proof for each step toward an Isaac Sim robot.",
+    "shortDescription": "Create motion keyframes and verify robot assets",
+    "longDescription": "Generate FLUX motion references, review timestamped Blender keyframes, and prove immutable asset preparation and Isaac Sim GPU walking.",
     "developerName": "Lucky9 Labs",
     "category": "Development",
     "capabilities": [
