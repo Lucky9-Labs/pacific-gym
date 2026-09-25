@@ -10,6 +10,12 @@
       "acceptance_command": "sh scripts/accept-source-intake.sh"
     },
     {
+      "id": "02-rawtree-traces",
+      "state": "live_round_trip_passed",
+      "proof": "proof/slice-02/proof.json",
+      "acceptance_command": "sh scripts/accept-rawtree-trace.sh"
+    },
+    {
       "id": "06-liquid-comparison-pulse",
       "state": "local_fixture_passed",
       "proof": "proof/slice-06/proof.json",
