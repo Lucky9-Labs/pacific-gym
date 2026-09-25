@@ -33,3 +33,18 @@ PYTHONPATH=plugins/pacific-gym python3 -m pacific_gym judge-keyframes \
 ```
 
 The watcher checks immutable reference hashes, matching frame IDs and timestamps, candidate completion/hash, and equal image dimensions before calling local Ollama. It emits one structured advisory result per completed pair and waits on missing or mismatched frames. Stop it with Ctrl-C. The separate `PostToolUse` hook compares explicit `candidate-add` renders against pinned run frames; neither path establishes physics, gait, or Isaac Sim acceptance. Run the deterministic keyframe gate checks with `PYTHONPATH=plugins/pacific-gym python3 -m unittest discover -s plugins/pacific-gym/tests -p 'test_keyframe_judge.py' -v`.
+
+## Nimble reference research
+
+`pacific-gym nimble-research` first describes a local reference image with the configured Ollama vision model, then uses Nimbleway Web Search Agents to find cited animation, artist, and Isaac Sim/physics resources. The image stays local; only its visual description goes to Nimble. It writes `.json` research evidence and a `flux-prompt-draft.txt` under the requested output directory. The draft is not submitted to FLUX automatically.
+
+On macOS, with a Nimbleway API key copied to the clipboard:
+
+```sh
+PYTHONPATH=plugins/pacific-gym python3 -m pacific_gym nimble-research \
+  --reference proof/slice-03/renders/visual/three-quarter.png \
+  --out .pacific-gym/nimble/strokah \
+  --clipboard-key
+```
+
+Alternatively set `NIMBLE_API_KEY` in the environment or ignored root `.env`. The key is held in process memory only and is not included in output. Nimble's API is text research, so the image caption is generated locally rather than uploading image bytes.

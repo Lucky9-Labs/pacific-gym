@@ -31,6 +31,8 @@ python3 -m pacific_gym inspect --spec fixtures/strokah-source.json --out .pacifi
 
 The inspection must distinguish the static visual asset from the unanimated mechanical rig reference. Do not infer shared bindings from names. Do not request or infer a premade gait asset: FLUX supplies visual gait direction before production motion authoring.
 
+For a sourced pre-generation research brief from an image, run `python3 -m pacific_gym nimble-research --reference <image> --out <run-local-dir> --clipboard-key` on macOS (or provide `NIMBLE_API_KEY`). The image is described locally by Ollama; only the text description is sent to Nimble. Review `nimble-research.json` and `flux-prompt-draft.txt` before using the prompt. Art and motion references are visual direction; physics sources inform later Isaac Sim authoring and never establish physical validity by themselves.
+
 ## Candidate feedback
 For the local static comparison pulse, use Liquid AI's official Ollama model `hf.co/LiquidAI/LFM2.5-VL-3B-GGUF:Q4_K_M`. Check its resolved digest against `proof/slice-06/proof.json` and run `sh scripts/accept-comparison-pulse.sh` from the repository root.
 

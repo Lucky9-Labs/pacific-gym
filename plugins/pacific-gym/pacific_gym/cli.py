@@ -5,6 +5,7 @@ import hashlib
 import json
 import os
 import struct
+import sys
 import subprocess
 import tempfile
 import uuid
@@ -125,6 +126,12 @@ def main() -> int:
     comparison.add_argument("--pair-out", type=Path)
     comparison.add_argument("--model", default="hf.co/LiquidAI/LFM2.5-VL-3B-GGUF:Q4_K_M")
     comparison.add_argument("--host", default="http://127.0.0.1:11434")
+    research = sub.add_parser("nimble-research", help="Caption a local reference and find sourced art, animation, and Isaac Sim guidance")
+    research.add_argument("--reference", type=Path, required=True)
+    research.add_argument("--out", type=Path, required=True)
+    research.add_argument("--model", default="hf.co/LiquidAI/LFM2.5-VL-3B-GGUF:Q4_K_M")
+    research.add_argument("--host", default="http://127.0.0.1:11434")
+    research.add_argument("--clipboard-key", action="store_true", help="Read Nimble API key from macOS clipboard without logging or saving it")
     publish_frame = sub.add_parser("publish-candidate-frame", help="Mark a completed Blender PNG as a timestamped candidate frame")
     publish_frame.add_argument("--reference-manifest", type=Path, required=True)
     publish_frame.add_argument("--candidate-dir", type=Path, required=True)
@@ -187,6 +194,23 @@ def main() -> int:
         args.out.parent.mkdir(parents=True, exist_ok=True)
         args.out.write_text(json.dumps(result, indent=2) + "\n")
         print(json.dumps(result["comparison"], indent=2))
+    elif args.command == "nimble-research":
+        from .nimble_research import clipboard_key, run
+        from .trace import redact
+        key = ""
+        try:
+            key = clipboard_key() if args.clipboard_key else os.environ.get("NIMBLE_API_KEY", "")
+            if not key or not key.isascii() or any(char.isspace() for char in key):
+                raise RuntimeError("NIMBLE_API_KEY_UNAVAILABLE_OR_INVALID")
+            result = run(args.reference, args.out, key, args.model, args.host)
+        except Exception as error:
+            message = redact(str(error), [key])[:500]
+            print(f"NIMBLE_RESEARCH_FAILED: {message}", file=sys.stderr)
+            return 3
+        print(json.dumps({"provider": result["provider"], "request_id": result["nimble_request_id"],
+                          "reference_sha256": result["input"]["sha256"],
+                          "research_path": str(args.out / "nimble-research.json"),
+                          "prompt_path": str(args.out / "flux-prompt-draft.txt")}, indent=2))
     elif args.command == "publish-candidate-frame":
         from .keyframe_judge import publish_cli
         return publish_cli(args)
