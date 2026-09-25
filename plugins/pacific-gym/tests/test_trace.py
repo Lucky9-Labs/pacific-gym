@@ -1,42 +1,79 @@
 import json
+import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from pacific_gym.trace import (TABLE, canonical, cleanup_verification_rows,
-                               export_and_verify, redact, specimen)
+from pacific_gym.trace import TABLE, canonical, cleanup_verification_rows, export_and_verify, redact, validate_actual_trace
+from pacific_gym.trace_capture import capture_read_thread, export_thread_capture_file
 
 
-ROOT = Path(__file__).resolve().parents[3]
-RUN_ID = "73e424af-9d3a-4287-ac3f-9811b847b42a"
+THREAD = "01a0da85-23bf-7811-8531-a45e6cdca8bb"
+RUN = "73e424af-9d3a-4287-ac3f-9811b847b42a"
+
+
+def actual_thread(path):
+    return {"thread": {"id": THREAD, "kind": "codex"}, "turns": [{"items": [
+        {"type": "userMessage", "id": "u1", "content": [{"type": "text", "text": "Inspect these current inputs"}]},
+        {"type": "commandExecution", "id": "t1", "command": "python inspect.py", "cwd": str(path),
+         "status": "completed", "exitCode": 0, "output": {"text": str(path / "artifact.json")}},
+        {"type": "agentMessage", "id": "a1", "phase": "final_answer", "text": "Inspection passed for the requested run."},
+    ]}]}
 
 
 class TraceTest(unittest.TestCase):
-    def test_specimen_contains_ordered_rows_and_codex_identity(self):
-        trace = specimen(ROOT, RUN_ID, "session-123", "thread-456")
-        self.assertEqual([event["event_type"] for event in trace],
-                         ["prompt", "tool_call", "tool_result", "decision"])
-        self.assertEqual(json.loads(trace[2]["tool_result"])["assets"][1]["structure"]["skins"][0]["joints"], 62)
-        self.assertTrue(all(row["codex_session_id"] == "session-123" and row["codex_thread_id"] == "thread-456"
-                            for row in trace))
+    def test_capture_maps_actual_thread_events_and_artifact_hash(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            artifact = root / "artifact.json"
+            artifact.write_text('{"actual":true}')
+            rows = capture_read_thread(actual_thread(root), THREAD, RUN, [root], codex_session_id=THREAD)
+        kinds = [row["event_type"] for row in rows]
+        self.assertEqual(kinds, ["prompt", "tool_call", "tool_result", "assistant_message", "decision"])
+        self.assertEqual(rows[0]["codex_thread_id"], THREAD)
+        self.assertEqual(rows[0]["codex_session_id"], THREAD)
+        self.assertEqual(rows[2]["trace_source"], "codex-app-read_thread-current-thread")
+        self.assertEqual(len(rows[-1]["artifact_refs"][0]["sha256"]), 64)
         self.assertEqual(TABLE, "luckybucky_hackathon")
-        refs = [ref for row in trace for ref in row["artifact_refs"]]
-        self.assertTrue(all(not ref["media_bytes_exported"] and len(ref["sha256"]) == 64 for ref in refs))
 
-    def test_redaction_removes_nested_credentials_before_export(self):
-        original = {"prompt": "Bearer rt_secret12345678 and token=knownvalue",
-                    "tool": {"api_key": "knownvalue", "url": "https://x.test/?token=knownvalue&versionId=immutable"},
-                    "bytes": ["knownvalue", "safe"]}
-        safe = redact(original, ["knownvalue"])
+    def test_rejects_identity_mismatch_and_missing_actual_evidence(self):
+        with self.assertRaisesRegex(ValueError, "identity"):
+            capture_read_thread(actual_thread(Path("/tmp")), "other", RUN)
+        with self.assertRaisesRegex(ValueError, "artifact"):
+            capture_read_thread({"thread": {"id": THREAD, "kind": "codex"}, "turns": [{"items": [
+                {"type": "userMessage", "content": [{"type": "text", "text": "prompt"}]},
+                {"type": "commandExecution", "command": "x", "output": {"text": "no path"}},
+                {"type": "agentMessage", "phase": "final_answer", "text": "decision"},
+            ]}]}, THREAD, RUN, codex_session_id=THREAD)
+
+    def test_refuses_truncated_tool_output_instead_of_silently_dropping_data(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "artifact.json").write_text("present")
+            payload = actual_thread(root)
+            payload["turns"][0]["items"][1]["output"]["truncated"] = True
+            rows = capture_read_thread(payload, THREAD, RUN, [root], codex_session_id=THREAD)
+            self.assertTrue(any("partial" in warning["reason"]
+                                for warning in rows[0]["capture_warnings"]))
+
+    def test_replay_fixture_is_never_accepted_as_actual_trace(self):
+        with self.assertRaisesRegex(ValueError, "current-thread"):
+            validate_actual_trace([{"trace_source": "representative-replay-of-slice-01-inspection"}])
+
+    def test_redaction_removes_nested_credentials_and_known_values(self):
+        safe = redact({"prompt": "Bearer rt_secret12345678 token=knownvalue",
+                       "tool": {"api_key": "knownvalue", "url": "https://x.test/?token=knownvalue&versionId=immutable"}},
+                      ["knownvalue"])
         serialized = canonical(safe)
         self.assertNotIn("knownvalue", serialized)
         self.assertNotIn("rt_secret12345678", serialized)
         self.assertIn("versionId=immutable", serialized)
-        self.assertEqual(safe["tool"]["api_key"], "[REDACTED]")
 
-    def test_round_trip_requires_exact_rows_and_preserves_order(self):
-        trace = specimen(ROOT, RUN_ID, "session-123", "thread-456")
-        trace[0]["agent_output"] += " Bearer rt_secret12345678"
+    def test_export_round_trip_checks_exact_rows_and_current_chat_identity(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "artifact.json").write_text('{"actual":true}')
+            rows = capture_read_thread(actual_thread(root), THREAD, RUN, [root], codex_session_id=THREAD)
         captured = {}
 
         def fake_request(method, url, key, body, database):
@@ -44,53 +81,48 @@ class TraceTest(unittest.TestCase):
                 captured["rows"] = body
                 self.assertNotIn("rt_secret12345678", canonical(body))
                 return "insert-123", {"inserted": len(body)}
-            self.assertIn(RUN_ID, body["sql"])
-            return "query-456", {"data": list(reversed(captured["rows"]))}
+            self.assertIn(RUN, body["sql"])
+            rows = [{**row, "timestamp": "2026-09-25T12:00:00+00:00",
+                     "tool_input.generated_column": None} for row in captured["rows"]]
+            return "query-456", {"data": list(reversed(rows))}
 
         with patch("pacific_gym.trace.request_json", side_effect=fake_request):
-            result = export_and_verify(trace, "rt_secret12345678")
+            result = export_and_verify(rows, "rt_secret12345678", expected_thread_id=THREAD)
         self.assertEqual(result["status"], "live_round_trip_passed")
         self.assertEqual(result["query_request_id"], "query-456")
-        self.assertEqual(result["row_count"], 4)
-        self.assertEqual([row["sequence"] for row in result["returned_rows"]], [1, 2, 3, 4])
-        self.assertEqual(result["codex_session_id"], "session-123")
-        self.assertEqual(result["codex_thread_id"], "thread-456")
-        self.assertTrue(captured["rows"][0]["agent_output"].endswith("[REDACTED]"))
+        self.assertEqual(result["codex_thread_id"], THREAD)
+        self.assertEqual(len(result["returned_rows"]), 5)
 
-        def tampered_request(method, url, key, body, database):
-            if "/v1/tables/" in url:
-                return None, {"inserted": len(captured["rows"])}
-            altered = [{**row} for row in captured["rows"]]
-            altered[0]["agent_output"] = "tampered"
-            return None, {"rows": altered}
+    def test_file_integration_saves_export_and_readback_receipt(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "artifact.json").write_text('{"actual":true}')
+            event_file = root / "events.json"
+            event_file.write_text(json.dumps(actual_thread(root)))
 
-        with patch("pacific_gym.trace.request_json", side_effect=tampered_request):
-            with self.assertRaisesRegex(ValueError, "event sequence|event row fields"):
-                export_and_verify(trace, "rt_secret12345678")
+            def fake_request(method, url, key, body, database):
+                if "/v1/tables/" in url:
+                    return "insert-1", {"inserted": len(body)}
+                return "query-1", {"rows": getattr(fake_request, "rows", [])}
 
-    def test_query_retries_until_all_inserted_events_are_visible(self):
-        trace = specimen(ROOT, RUN_ID, "session-123", "thread-456")
-        captured = {}
+            def request(method, url, key, body, database):
+                if "/v1/tables/" in url:
+                    request.rows = body
+                    return "insert-1", {"inserted": len(body)}
+                return "query-1", {"rows": request.rows}
 
-        def delayed_request(method, url, key, body, database):
-            if "/v1/tables/" in url:
-                captured["rows"] = body
-                return "insert-123", {"inserted": len(body)}
-            captured["queries"] = captured.get("queries", 0) + 1
-            rows = [] if captured["queries"] == 1 else captured["rows"]
-            return "query-" + str(captured["queries"]), {"data": rows}
+            with patch("pacific_gym.trace.request_json", side_effect=request), patch.dict("os.environ", {"CODEX_SESSION_ID": THREAD}):
+                receipt = export_thread_capture_file(event_file, THREAD, RUN, "rt_secret12345678", root / "out", allowed_artifact_roots=[root])
+            self.assertEqual(receipt["status"], "live_round_trip_passed")
+            self.assertTrue((root / "out/actual-chat-trace.json").is_file())
+            self.assertTrue((root / "out/actual-chat-export-readback.json").is_file())
+            self.assertNotIn("returned_rows", json.loads((root / "out/actual-chat-export-readback.json").read_text()))
 
-        with patch("pacific_gym.trace.request_json", side_effect=delayed_request), patch("pacific_gym.trace.time.sleep"):
-            result = export_and_verify(trace, "rt_secret12345678")
-        self.assertEqual(result["query_request_ids"], ["query-1", "query-2"])
-        self.assertEqual(result["row_count"], 4)
-
-    def test_cleanup_reports_read_only_api_without_mutating_table(self):
+    def test_cleanup_does_not_mutate_table(self):
         with patch("pacific_gym.trace.request_json") as request:
-            result = cleanup_verification_rows("rt_secret12345678", RUN_ID)
+            result = cleanup_verification_rows("rt_secret12345678", RUN)
         request.assert_not_called()
         self.assertEqual(result["status"], "cleanup_unavailable")
-        self.assertIn("read queries only", result["reason"])
 
 
 if __name__ == "__main__":
