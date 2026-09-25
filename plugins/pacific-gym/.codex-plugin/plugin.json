@@ -19,7 +19,7 @@
       "Write"
     ],
     "defaultPrompt": [
-      "Inspect the Strokah source assets and show their rig structures."
+      "Use Pacific Gym on this reference. If I ask you to keep going until GPU walking proof or a blocker, create a Goal and continue."
     ]
   }
 }

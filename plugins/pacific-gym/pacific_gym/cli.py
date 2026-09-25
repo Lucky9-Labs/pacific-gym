@@ -134,6 +134,7 @@ def main() -> int:
     start_command.add_argument("--reference", type=Path, required=True)
     start_command.add_argument("--source", type=Path)
     start_command.add_argument("--rig", type=Path)
+    start_command.add_argument("--reference-frame", type=Path, action="append", default=[])
     start_command.add_argument("--style", default="")
     status_command = sub.add_parser("run-status", help="Show the active run and acceptance state")
     status_command.add_argument("--workspace", type=Path, default=Path.cwd())
@@ -144,6 +145,24 @@ def main() -> int:
     blocker_command = sub.add_parser("run-block", help="Record a specific blocker and stop this run")
     blocker_command.add_argument("--manifest", type=Path, required=True)
     blocker_command.add_argument("--reason", required=True)
+    blocker_command.add_argument("--evidence", required=True, help="Observed command output, receipt path/hash, or environment evidence")
+    complete_command = sub.add_parser("run-complete", help="Complete only after both GPU acceptance gates pass")
+    complete_command.add_argument("--manifest", type=Path, required=True)
+    blender_command = sub.add_parser("blender-derive", help="Run a Blender background derivative with immutable input checks")
+    blender_command.add_argument("--manifest", type=Path, required=True)
+    blender_command.add_argument("--executable", default="blender")
+    blender_command.add_argument("--script", type=Path, required=True)
+    blender_command.add_argument("--input", type=Path, action="append", required=True)
+    blender_command.add_argument("--output", type=Path, action="append", required=True)
+    blender_command.add_argument("--extra-arg", action="append", default=[])
+    isaac_command = sub.add_parser("isaac-run", help="Run an Isaac Sim scenario adapter and verify GPU walking receipts")
+    isaac_command.add_argument("--manifest", type=Path, required=True)
+    isaac_command.add_argument("--executable", required=True, help="Isaac Sim python.sh/kit Python executable")
+    isaac_command.add_argument("--script", type=Path, required=True)
+    isaac_command.add_argument("--usd", type=Path, required=True)
+    isaac_command.add_argument("--receipt", type=Path, required=True)
+    isaac_command.add_argument("--proof-video", type=Path, required=True)
+    isaac_command.add_argument("--extra-arg", action="append", default=[])
     args = parser.parse_args()
     if args.command == "inspect":
         print(json.dumps(inspect(args.spec, args.out, args.cache), indent=2))
@@ -182,7 +201,7 @@ def main() -> int:
         return 0 if result["status"] == "live_round_trip_passed" else 2
     elif args.command == "run-start":
         from .run import goal_text, start
-        result = start(args.workspace, args.reference, args.source, args.rig, args.style)
+        result = start(args.workspace, args.reference, args.source, args.rig, args.style, args.reference_frame)
         print(json.dumps({"run_id": result["run_id"], "manifest": result["manifest"],
                           "goal": goal_text(result)}, indent=2))
     elif args.command == "run-status":
@@ -195,7 +214,21 @@ def main() -> int:
         print("PACIFIC_GYM_CANDIDATE=" + result["id"])
     elif args.command == "run-block":
         from .run import set_blocker
-        result = set_blocker(args.manifest, args.reason)
+        result = set_blocker(args.manifest, args.reason, args.evidence)
         print(json.dumps({"run_id": result["run_id"], "state": result["state"],
                           "blocker": result["blocker"]}))
+    elif args.command == "run-complete":
+        from .run import complete
+        result = complete(args.manifest)
+        print(json.dumps({"run_id": result["run_id"], "state": result["state"]}))
+    elif args.command == "blender-derive":
+        from .integrations import blender_derive
+        result = blender_derive(args.manifest, args.executable, args.script,
+                                args.input, args.output, args.extra_arg)
+        print(json.dumps(result, indent=2))
+    elif args.command == "isaac-run":
+        from .integrations import isaac_run
+        result = isaac_run(args.manifest, args.executable, args.script, args.usd,
+                           args.receipt, args.proof_video, args.extra_arg)
+        print(json.dumps(result, indent=2))
     return 0

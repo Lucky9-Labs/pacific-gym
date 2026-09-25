@@ -8,9 +8,9 @@ Strokah is the first fixture. The versioned source packet at `s3://mech-art-libr
 
 ## Plugin components
 
-- The repo marketplace installs `plugins/pacific-gym`, whose Codex skill guides source inspection, visual reference generation, Blender repairs, and the final GPU goal.
+- The repo marketplace installs `plugins/pacific-gym`, whose Codex skill guides source inspection, visual reference generation, Blender repairs, and the final GPU goal. When the user's request explicitly asks to persist through completion, the agent creates the Codex task Goal; hooks never create Goals.
 - Local command tools expose repeatable `inspect`, `trace`, `generate-video`, `keyframes`, `blender-derive`, `compare`, `validate-usd`, and `promote` steps. Each produces machine-readable results and one documented acceptance command.
-- The planned trusted `PostToolUse` hook will observe candidate-producing batches while a Pacific Gym run is active, invoke the local Liquid VLM against pinned reference frames, return concise feedback to Codex, and write a trace. The current package has only a `SessionStart` install check; `compare` is a manual command and does not auto-steer.
+- `SessionStart` restores a run only from the current workspace's `.pacific-gym/active.json`. `PostToolUse` filters for the explicit `candidate-add` command, compares that PNG with pinned references through local Liquid VLM, and stores exact input and image-pair hashes plus feedback in the run manifest. `Stop` rejects a false completion claim until hash-verified Isaac evidence or a structured, evidence-backed blocker exists. VLM edits remain advisory.
 - RawTree stores full textual run traces and metadata after credential redaction. Large media lives in the versioned artifact package, with URI and hash in the trace.
 
 ## Reference and repair loop
