@@ -16,6 +16,12 @@
       "acceptance_command": "sh scripts/accept-rawtree-trace.sh"
     },
     {
+      "id": "03-flux3-video-gait-reference",
+      "state": "industrial_live_candidate_reviewed_gait_not_accepted",
+      "proof": "proof/slice-03/proof.json",
+      "acceptance_command": "sh scripts/accept-flux3-gait.sh"
+    },
+    {
       "id": "06-liquid-comparison-pulse",
       "state": "local_fixture_passed",
       "proof": "proof/slice-06/proof.json",

@@ -1,0 +1,25 @@
+{
+  "bucket": "mech-art-library-20260905225047699700000001",
+  "candidate_only": true,
+  "limitations": "Visual direction only; planted feet drift and cadence is too light for accepted physics gait. No Isaac Sim validation claimed.",
+  "manifest": {
+    "bytes": 4092,
+    "content_type": "application/json",
+    "key": "models/mechs/strokah-skeleton/pacific-gym/gait-reference-candidates/flux3-industrial/sha256-221cac643dee84d6840ace97ed89d5fe081df01e8ce3028122018e8f327cd83a/manifest.json",
+    "readback_sha256": "7eaab291d4c374e36530ae154c72188ac2cd108835e340925dc54b519f5adda6",
+    "server_side_encryption": "AES256",
+    "sha256": "7eaab291d4c374e36530ae154c72188ac2cd108835e340925dc54b519f5adda6",
+    "version_id": "3Tk2othIm32NNhBAaBrguMzNi2Wr0AZf"
+  },
+  "schema_version": 1,
+  "status": "published_and_readback_verified_visual_candidate",
+  "video": {
+    "bytes": 1465228,
+    "content_type": "video/mp4",
+    "key": "models/mechs/strokah-skeleton/pacific-gym/gait-reference-candidates/flux3-industrial/sha256-221cac643dee84d6840ace97ed89d5fe081df01e8ce3028122018e8f327cd83a/video.mp4",
+    "readback_sha256": "221cac643dee84d6840ace97ed89d5fe081df01e8ce3028122018e8f327cd83a",
+    "server_side_encryption": "AES256",
+    "sha256": "221cac643dee84d6840ace97ed89d5fe081df01e8ce3028122018e8f327cd83a",
+    "version_id": "Jp2S.PEw2mg116.xyaW9CE7q5D1bI90b"
+  }
+}

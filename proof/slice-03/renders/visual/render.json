@@ -1,0 +1,43 @@
+{
+  "source_sha256": "65c6ef7de40c529c75c82dad8ab0f5ac13638882b1ef1eddee9a49a89ee42af1",
+  "blender_version": "5.2.1 LTS",
+  "bounding_box": {
+    "min": [
+      -0.42166993021965027,
+      -0.16397933661937714,
+      0.0010441163321956992
+    ],
+    "max": [
+      0.42166993021965027,
+      0.18547208607196808,
+      1.0000150203704834
+    ]
+  },
+  "views": {
+    "negative-y": {
+      "path": "negative-y.png",
+      "sha256": "fae496d64058bfc498088572f0a249223a31e7800e28d3de3a2bcd9a09943be5",
+      "bytes": 526496
+    },
+    "positive-y": {
+      "path": "positive-y.png",
+      "sha256": "ec9763ada794b60a2dc9695c352cf6cc7a06cb3221c8103c7488cd15e5009c51",
+      "bytes": 517858
+    },
+    "negative-x": {
+      "path": "negative-x.png",
+      "sha256": "90254e9ba270009f6fe6cc90bef3a0045e264eb2518706cf433c80fed75a6201",
+      "bytes": 503407
+    },
+    "positive-x": {
+      "path": "positive-x.png",
+      "sha256": "f25b0f8c965171c906f05e2cf6180e0e1a8deaa2292b906e66b7774c14801fd3",
+      "bytes": 519303
+    },
+    "three-quarter": {
+      "path": "three-quarter.png",
+      "sha256": "6a3b6b41ccda66838aa249480d3cf47049c54e742bb912fa5d70e7b1cec62dd0",
+      "bytes": 581891
+    }
+  }
+}

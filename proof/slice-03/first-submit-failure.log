@@ -1,0 +1,5 @@
+2026-09-25: BFL accepted one FLUX 3 Video i2v draft submission and returned an id and polling_url.
+The client raised RuntimeError: Unexpected BFL polling host before saving that response.
+Job id, cost, and result URL were not retained; no video was downloaded.
+The client has been fixed to persist the response before HTTPS URL validation.
+The clipboard key cleared before a replacement submission could run.

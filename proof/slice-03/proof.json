@@ -1,0 +1,149 @@
+{
+  "schema_version": 1,
+  "slice": "03-flux3-video-gait-reference",
+  "state": "industrial_live_candidate_reviewed_gait_not_accepted",
+  "acceptance_command": "sh scripts/accept-flux3-gait.sh",
+  "live_command": "sh scripts/accept-flux3-gait.sh --live",
+  "clipboard_live_command": "sh scripts/accept-flux3-gait.sh --live-from-clipboard",
+  "local_acceptance_exit_code": 0,
+  "live_attempt_exit_code": 0,
+  "blocker": null,
+  "source_assets": {
+    "visual_lod0_sha256": "65c6ef7de40c529c75c82dad8ab0f5ac13638882b1ef1eddee9a49a89ee42af1",
+    "rig_reference_sha256": "4f8bdb1d15ed6d164f1d8fa2aca63c11884f7019ed892f2862c61d5245135506",
+    "fixture": "plugins/pacific-gym/fixtures/strokah-source.json",
+    "source_modified": false,
+    "rig_joint_count": 62,
+    "source_animation_count": 0
+  },
+  "renders": {
+    "tool": "Blender 5.2.1 LTS",
+    "visual_receipt": "proof/slice-03/renders/visual/render.json",
+    "rig_receipt": "proof/slice-03/renders/rig/render.json",
+    "industrial_start_receipt": "proof/slice-03/renders/industrial/render.json",
+    "views_per_source": 5,
+    "rig_render_only_exclusions": [
+      "Icosphere",
+      "Terrain_Walk_Test"
+    ],
+    "start_frame": "proof/slice-03/renders/visual/three-quarter.png",
+    "start_frame_sha256": "6a3b6b41ccda66838aa249480d3cf47049c54e742bb912fa5d70e7b1cec62dd0",
+    "contact_sheet": "proof/slice-03/source-contact-sheet.png",
+    "contact_sheet_sha256": "36afc29c1883004294fa941d524ff6a2792561b321fe24eaffd6d11b3bf6b95c"
+  },
+  "bfl_request": {
+    "spec": "proof/slice-03/request.json",
+    "spec_sha256": "1ea4a30f6640ecef33b4c4f5dee1c369115f408aad3a2b964bde59c970c4baf0",
+    "endpoint": "https://api.bfl.ai/v1/flux-3-video",
+    "model": "FLUX 3 Video",
+    "version": "latest",
+    "mode": "i2v",
+    "duration_seconds": 5,
+    "resolution": "hd",
+    "aspect_ratio": "1:1",
+    "draft": true,
+    "generate_audio": false,
+    "submitted": true,
+    "first_submission": "BFL accepted one draft request; job id and cost were not retained because client validation failed before persistence. No video was downloaded.",
+    "replacement_submitted": true,
+    "job_id": "8fe9d612-c9dd-47b4-b781-cd3ee19ba2d0",
+    "job_status": "Ready",
+    "video": "proof/slice-03/strokah-flux3-gait.mp4",
+    "video_sha256": "f9feb49e190ea902b737c1f187083f1d7638b90de14722819ba344e5633ec588",
+    "video_bytes": 1228982,
+    "video_duration_seconds": 5.041667,
+    "video_dimensions": [
+      960,
+      960
+    ],
+    "video_fps": 24,
+    "video_contact_sheet": "proof/slice-03/video-contact-sheet.png",
+    "video_contact_sheet_sha256": "c6fc1be518cf1cb2e7e715b44d0fb39dc35406f18ad733eebe8c2521e058902f",
+    "feet_contact_sheet": "proof/slice-03/feet-contact-sheet.png",
+    "feet_contact_sheet_sha256": "8c79bad63a31e71f28fcd2147d49c5f3ebfaad9175c6a6d274846ab9043ba2a0"
+  },
+  "heft_candidate": {
+    "spec": "proof/slice-03/request-heft.json",
+    "spec_sha256": "2ec994cc59f3c5387cb359ec8d7933d73239d3157af090d0a45857b88d581bf3",
+    "model": "FLUX 3 Video",
+    "version": "latest",
+    "mode": "i2v",
+    "duration_seconds_requested": 6,
+    "resolution": "hd",
+    "aspect_ratio": "1:1",
+    "draft": true,
+    "generate_audio": false,
+    "job_id": "0de34b76-fd69-48f5-8514-5e5dc2a94705",
+    "job_status": "Ready",
+    "video": "proof/slice-03/strokah-flux3-heft.mp4",
+    "video_sha256": "2c48336fbf719c3cace3024c73886cce30f4a04afab499057e6d4ad82dcea22d",
+    "video_bytes": 1425706,
+    "video_duration_seconds": 6.041667,
+    "video_dimensions": [
+      960,
+      960
+    ],
+    "video_fps": 24,
+    "contact_sheet": "proof/slice-03/heft-contact-sheet.png",
+    "contact_sheet_sha256": "23b22143eeea304e79ee3ab7e0cd1a2d7a47ec212e34c19f5b735019fc270a1a",
+    "review": "Recognizable Strokah shell, hands, and split feet. The first stride has a clearer lifted foot and body dip; the torso turns to face front and the later motion mostly steps in place. Foot contact still slides and weight transfer is not convincingly heavy. Not accepted as a pinned gait reference."
+  },
+  "industrial_candidate": {
+    "spec": "proof/slice-03/request-industrial.json",
+    "spec_sha256": "c008a09c472082ed32ce54e4497536503a11a51a40cdca563140a1fd59b1165d",
+    "start_frame": "proof/slice-03/renders/industrial/walk-left.png",
+    "start_frame_sha256": "a2afe229f53ac17d84e71cdaa1a7c7b4880cf553b951dc282af475ae86dc9fd8",
+    "model": "FLUX 3 Video",
+    "version": "latest",
+    "mode": "i2v",
+    "duration_seconds_requested": 7,
+    "resolution": "hd",
+    "aspect_ratio": "1:1",
+    "draft": false,
+    "generate_audio": true,
+    "job_id": "015e9481-a69d-484d-a951-6d2c8df7a18f",
+    "job_status": "Ready",
+    "video": "proof/slice-03/strokah-flux3-industrial.mp4",
+    "video_sha256": "221cac643dee84d6840ace97ed89d5fe081df01e8ce3028122018e8f327cd83a",
+    "video_bytes": 1465228,
+    "video_duration_seconds": 7.041667,
+    "video_dimensions": [
+      960,
+      960
+    ],
+    "video_fps": 24,
+    "audio_codec": "aac",
+    "contact_sheet": "proof/slice-03/industrial-contact-sheet.png",
+    "contact_sheet_sha256": "e5b8ad21609967afb15834701e07fbf7c76f00e9bdac0238f12ef128c701d564",
+    "feet_sheet": "proof/slice-03/industrial-feet-sheet.png",
+    "feet_sheet_sha256": "c923525bb273bdfd5b14ddce1d32ff02c4bc418b2e3d7b1adc87cc24204646c6",
+    "full_frames_manifest": "proof/slice-03/industrial-full-frames/manifest.json",
+    "full_frames_manifest_sha256": "6d30d918a428aa46138cf4974c1b38c0b0e09e231f3249226978388dbe2c496b",
+    "full_frame_count": 14,
+    "full_frame_dimensions": [
+      960,
+      960
+    ],
+    "full_frame_sample_interval_seconds": 0.5,
+    "full_frame_crop": null,
+    "review": "Clear improvement in lateral travel and industrial stepping: Strokah stays in side profile, crosses left through several strides, compresses its knees, and kicks up dust. The clip still moves faster and lighter than a colossal machine, and planted feet drift between frames. It is a useful visual direction but not a physics or foot-contact acceptance reference."
+  },
+  "review": {
+    "source_recognizability": "The five visual and five rig reference views show the same unarmored mechanical silhouette, large shield-like chest shell, long hands, round leg joints, and split feet.",
+    "generated_video_recognizability": "Pass for broad identity: the large shield-shaped shell, round shoulder and leg joints, long articulated hands, and split feet remain legible throughout the five-second clip. Fine mechanical detail softens in motion.",
+    "generated_video_foot_contacts": "Fail for gait reference: the legs alternate and the feet make toe-down poses, but the contact feet slide across the floor instead of holding fixed planted positions. There is little forward travel, and a clear heel-to-toe weight transfer is not visible.",
+    "gait_accepted": false
+  },
+  "logs": [
+    "proof/slice-03/acceptance.log",
+    "proof/slice-03/live-attempt.log",
+    "proof/slice-03/first-submit-failure.log",
+    "proof/slice-03/blender-visual.log",
+    "proof/slice-03/blender-rig.log"
+  ],
+  "s3_publication": {
+    "receipt": "proof/slice-03/s3-publication.json",
+    "manifest": "proof/slice-03/s3-industrial-manifest.json",
+    "status": "published_and_readback_verified_visual_candidate"
+  }
+}
