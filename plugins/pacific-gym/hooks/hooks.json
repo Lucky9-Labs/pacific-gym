@@ -7,6 +7,11 @@
             "type": "command",
             "command": "PLUGIN_ROOT=/Users/lucky/Code/pacific-gym/plugins/pacific-gym python3 /Users/lucky/Code/pacific-gym/plugins/pacific-gym/hooks/session_start.py",
             "statusMessage": "Checking Pacific Gym plugin"
+          },
+          {
+            "type": "command",
+            "command": "python3 ${PLUGIN_ROOT}/hooks/reference_research.py",
+            "statusMessage": "Starting Pacific Gym reference research"
           }
         ]
       }

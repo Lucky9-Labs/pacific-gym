@@ -35,3 +35,11 @@ PYTHONPATH=plugins/pacific-gym python3 -m pacific_gym judge-keyframes \
 ```
 
 The watcher checks immutable reference hashes, matching frame IDs and timestamps, candidate completion/hash, equal image dimensions, and right-edge clipping before calling local Ollama. It waits until every timestamp in the reference manifest has a ready candidate, so one early frame is not judged on its own. Foreground reaching the right edge holds that frame until its framing is fixed and it is republished. The watcher emits structured advisory results for the synchronized set; it does not establish physics, gait, or Isaac Sim acceptance. Stop it with Ctrl-C. The separate `PostToolUse` hook compares explicit `candidate-add` renders against pinned run frames. Run the deterministic keyframe gate checks with `PYTHONPATH=plugins/pacific-gym python3 -m unittest discover -s plugins/pacific-gym/tests -p 'test_keyframe_judge.py' -v`.
+
+## Nimble reference research
+
+The standalone `nimble-research` command captions a local reference image with Ollama, then uses Nimbleway Web Search Agents to find cited animation, artist, and Isaac Sim/physics resources. The image stays local; only the visual description is sent to Nimble. The generated prompt is a review aid and is not submitted to FLUX automatically.
+
+For asset runs, use the separate `cultural-industrial-references` skill. `run-start` creates a run-bound research state and starts the asynchronous Nimble job when `NIMBLE_API_KEY` is available from the process environment or workspace `.env`. On macOS, pass `--clipboard-key` to read a copied key without logging or saving it. The dedicated `SessionStart` hook starts a waiting job when the key is configured and otherwise directs Astra to the reference skill. The skill polls the job at authoring checkpoints and saves the tagged receipt, FLUX draft, and source map under `.pacific-gym/runs/<run-id>/research/`. The run Goal tells Astra when to poll and how FLUX, Blender, and Isaac Sim tags steer their respective stages. Only the local Ollama caption is sent to Nimble.
+
+For an active run, use `python3 -m pacific_gym run-research-start --manifest <run.json>` and `python3 -m pacific_gym run-research-poll --manifest <run.json>`. Add `--clipboard-key` only when the key is not available through the environment or workspace `.env` and remains on the clipboard.
