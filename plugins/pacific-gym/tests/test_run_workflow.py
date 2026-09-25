@@ -38,6 +38,19 @@ class RunWorkflowTest(unittest.TestCase):
         other.mkdir()
         self.assertIsNone(run.for_workspace(other))
 
+    def test_manifest_load_normalizes_a_symlink_alias_to_its_resolved_path(self):
+        resolved_workspace = self.workspace.resolve()
+        alias_root = resolved_workspace / "mount-alias"
+        alias_root.symlink_to(resolved_workspace, target_is_directory=True)
+        alias_manifest = alias_root / self.manifest.relative_to(resolved_workspace)
+        data = json.loads(self.manifest.read_text())
+        data["manifest"] = str(alias_manifest)
+        self.manifest.write_text(json.dumps(data))
+
+        loaded = run.load(alias_manifest)
+
+        self.assertEqual(loaded["manifest"], str(self.manifest.resolve()))
+
     def test_candidate_requires_png_and_feedback_is_tied_to_candidate_hash(self):
         candidate = run.add_candidate(self.manifest, self.png, "render")
         receipt = {"inputs": [{"sha256": "ref"}, {"sha256": candidate["sha256"]}],

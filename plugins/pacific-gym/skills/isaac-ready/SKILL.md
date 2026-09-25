@@ -47,6 +47,15 @@ The installed `PostToolUse` hook reacts only to this explicit command while a ru
 
 ## Blender derivative
 
+Before starting target work, run the target preflight on that machine. It checks the resolved manifest/run path, every pinned input path, writable run storage, Blender and Isaac Sim executable startup probes, supported OS, and a live NVIDIA GPU query. Supply the actual target executable paths; do not infer installation from a prior machine's result:
+
+```sh
+python3 -m pacific_gym target-preflight --manifest /absolute/path/.pacific-gym/runs/<id>/run.json \
+  --blender /path/to/blender --isaac /path/to/isaac-sim/python.sh
+```
+
+Resolve mount symlinks by using the canonical manifest location printed by the tool. The loader accepts a symlink alias only when its recorded manifest resolves to the same file, and normalizes subsequent writes to the canonical path. Stop on any failed prerequisite before running Blender or Isaac Sim.
+
 Use Blender's background Python interface with a script that consumes the passed `--inputs` and `--outputs` lists. The wrapper stages read-only, hash-verified copies under the run, confines outputs to `derivatives/`, checks original and staged hashes after execution, captures Blender's version and stdout/stderr, and writes a JSON receipt with exact input/output SHA-256 values:
 
 ```sh

@@ -178,6 +178,10 @@ def main() -> int:
     isaac_command.add_argument("--receipt", type=Path, required=True)
     isaac_command.add_argument("--proof-video", type=Path, required=True)
     isaac_command.add_argument("--extra-arg", action="append", default=[])
+    preflight = sub.add_parser("target-preflight", help="Verify Blender, Isaac Sim, GPU, and run paths on the target host")
+    preflight.add_argument("--manifest", type=Path, required=True)
+    preflight.add_argument("--blender", default="blender")
+    preflight.add_argument("--isaac", required=True, help="Isaac Sim python.sh/kit Python executable")
     args = parser.parse_args()
     if args.command == "inspect":
         print(json.dumps(inspect(args.spec, args.out, args.cache), indent=2))
@@ -272,4 +276,7 @@ def main() -> int:
         result = isaac_run(args.manifest, args.executable, args.script, args.usd,
                            args.receipt, args.proof_video, args.extra_arg)
         print(json.dumps(result, indent=2))
+    elif args.command == "target-preflight":
+        from .integrations import environment_check
+        print(json.dumps(environment_check(args.manifest, args.blender, args.isaac), indent=2))
     return 0
