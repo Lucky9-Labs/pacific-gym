@@ -1,7 +1,12 @@
 {
   "acceptance_command": "sh scripts/accept-rawtree-trace.sh",
   "api_constraints": {
-    "cleanup": "The /v1/query endpoint accepts read queries only; row-level deletion is unavailable through the used API. The table was not dropped.",
+    "cleanup": "The /v1/query endpoint accepts read queries only; the published RawTree MCP reference documents whole-table deletion requiring admin permission and lists no row-delete operation. The table was not dropped.",
+    "documentation_review": [
+      "https://rawtree.com/docs",
+      "https://www.npmjs.com/package/%40rawtree/mcp",
+      "https://rawtree.com/blog/introducing-rawtree"
+    ],
     "table_name_pattern": "^[a-zA-Z][a-zA-Z0-9_]{0,63}$",
     "table_name_rejected": "luckybucky-hackathon",
     "table_name_used": "luckybucky_hackathon"
@@ -28,6 +33,7 @@
   "verification_observations": [
     "The first read-back against the new table exposed RawTree flattening nested input/result objects into dotted column names and omitting null-valued fields.",
     "The exporter now serializes nested input/result values as canonical JSON strings and uses the string unknown for unavailable event duration; that revised representation has not yet been verified live.",
-    "An ALTER TABLE DELETE request was rejected because the RawTree query API permits read queries only. No row cleanup was completed."
+    "An ALTER TABLE DELETE request was rejected because the RawTree query API permits read queries only. Official docs separate insert-json from read-only run-query; the published MCP tool reference lists delete-table (admin permission) but no row-delete tool.",
+    "A fresh read-only check on 2026-09-25 found the same four rows for the verification run. No row cleanup was completed."
   ]
 }
