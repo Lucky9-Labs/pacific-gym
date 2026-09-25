@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-repo_root=$(CDPATH= cd -- "$(dirname -- "$0")/../../.." && pwd)
+repo_root=$(git rev-parse --show-toplevel)
 source_env=${1:?Usage: bootstrap-worktree-env.sh /absolute/path/to/existing/.env}
 source_env=$(CDPATH= cd -- "$(dirname -- "$source_env")" && pwd)/$(basename -- "$source_env")
 if [ ! -f "$source_env" ] || [ ! -s "$source_env" ]; then

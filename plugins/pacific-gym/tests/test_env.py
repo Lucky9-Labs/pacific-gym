@@ -4,7 +4,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from pacific_gym.env import load_dotenv
+from pacific_gym.env import load_dotenv, bootstrap_worktree_env, host_config
 
 
 class DotenvTest(unittest.TestCase):
@@ -34,6 +34,36 @@ class DotenvTest(unittest.TestCase):
             env_file.write_text("not a valid name=x\n")
             with self.assertRaisesRegex(ValueError, "Invalid dotenv assignment"):
                 load_dotenv(env_file)
+
+
+class WorktreeEnvTest(unittest.TestCase):
+    def test_links_primary_env_and_preserves_existing_file(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            primary = root / "primary"
+            checkout = root / "checkout"
+            primary.mkdir(); checkout.mkdir()
+            source = primary / ".env"
+            source.write_text("BFL_API_KEY=test\n")
+            with patch("pacific_gym.env.subprocess.check_output", side_effect=[str(checkout), str(primary / ".git")]):
+                result = bootstrap_worktree_env(checkout)
+            self.assertTrue(result.is_symlink())
+            self.assertEqual(result.resolve(), source.resolve())
+            result.unlink(); result.write_text("LOCAL=keep\n")
+            with patch("pacific_gym.env.subprocess.check_output", side_effect=[str(checkout), str(primary / ".git")]):
+                bootstrap_worktree_env(checkout)
+            self.assertEqual(result.read_text(), "LOCAL=keep\n")
+
+    def test_host_config_loads_dotenv_without_exposing_credentials(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / ".env"
+            path.write_text("BFL_API_KEY=secret\nPACIFIC_GYM_MODAL_SANDBOX_ID=sb-test\nPACIFIC_GYM_ISAAC_EXECUTABLE=/isaac/python.sh\n")
+            with patch.dict(os.environ, {"PACIFIC_GYM_ENV_FILE": str(path)}, clear=True):
+                result = host_config()
+            self.assertEqual(result["sandbox_id"], "sb-test")
+            self.assertEqual(result["isaac_executable"], "/isaac/python.sh")
+            self.assertNotIn("secret", str(result))
+            self.assertFalse(result["runtime_verified"])
 
 
 if __name__ == "__main__":

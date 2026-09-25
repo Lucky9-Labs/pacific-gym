@@ -102,3 +102,7 @@ python3 -m pacific_gym run-block --manifest /absolute/path/.pacific-gym/runs/<id
 At Codex SessionStart, the plugin restores an active run only from the current workspace's `.pacific-gym/active.json`. The Stop guard prevents an active run from being called complete until both GPU acceptance fields are present or a blocker has been documented. Hooks are reminders and integrity gates; the manifest and evidence artifacts remain authoritative.
 
 For the local static comparison fixture, the pinned Ollama model and digest are in `proof/slice-06/proof.json`; run `sh scripts/accept-comparison-pulse.sh`. This controlled comparison does not prove gait or physics.
+
+## Environment discovery
+
+Before reporting missing credentials or GPU configuration, invoke the installed CLI from the workspace; it automatically links a missing worktree `.env` to the primary checkout. Run `python3 -m pacific_gym host-config` for the existing GPU connection and executable paths. Follow the installed README for access, then verify the host live. Never print API keys or treat connection metadata as a passed runtime check.

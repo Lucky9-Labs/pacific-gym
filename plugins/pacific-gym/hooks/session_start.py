@@ -19,6 +19,8 @@ def main() -> int:
     if not manifest.is_file():
         print("Pacific Gym manifest missing", file=sys.stderr)
         return 1
+    from pacific_gym.env import bootstrap_worktree_env
+    bootstrap_worktree_env(event.get("cwd") or os.getcwd())
     name = json.loads(manifest.read_text())["name"]
     result = {"plugin": name, "hook": "SessionStart", "status": "ready"}
     receipt = {

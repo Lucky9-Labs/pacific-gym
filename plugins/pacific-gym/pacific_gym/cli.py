@@ -190,10 +190,14 @@ def main() -> int:
     isaac_command.add_argument("--extra-arg", action="append", default=[])
     preflight = sub.add_parser("target-preflight", help="Verify Blender, Isaac Sim, GPU, and run paths on the target host")
     preflight.add_argument("--manifest", type=Path, required=True)
-    preflight.add_argument("--blender", default="blender")
-    preflight.add_argument("--isaac", required=True, help="Isaac Sim python.sh/kit Python executable")
+    preflight.add_argument("--blender", default=os.environ.get("PACIFIC_GYM_BLENDER_EXECUTABLE") or "blender")
+    preflight.add_argument("--isaac", default=os.environ.get("PACIFIC_GYM_ISAAC_EXECUTABLE"), required=not bool(os.environ.get("PACIFIC_GYM_ISAAC_EXECUTABLE")), help="Isaac Sim python.sh/kit Python executable")
+    sub.add_parser("host-config", help="Show GPU connection metadata loaded from .env (no API keys)")
     args = parser.parse_args()
-    if args.command == "inspect":
+    if args.command == "host-config":
+        from .env import host_config
+        print(json.dumps(host_config(), indent=2))
+    elif args.command == "inspect":
         print(json.dumps(inspect(args.spec, args.out, args.cache), indent=2))
     elif args.command == "compare":
         from .compare import compare

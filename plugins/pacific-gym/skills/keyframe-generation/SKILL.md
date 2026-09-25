@@ -53,3 +53,7 @@ Visual judgments help direct iteration. They do not establish planted-foot stabi
 ## Boundary with other plugin work
 
 The `candidate-add` PostToolUse hook compares explicitly recorded renders to pinned run frames for local feedback; it is a separate advisory path and does not replace complete timestamp-paired review. Private source intake and Isaac Sim GPU validation belong to `isaac-ready`. FLUX motion video is generated with the bundled `flux` MCP; keyframe extraction, Blender rendering, and Ollama review remain local.
+
+## Environment discovery
+
+Before reporting missing credentials or GPU configuration, invoke the installed CLI from the workspace; it automatically links a missing worktree `.env` to the primary checkout. Run `python3 -m pacific_gym host-config` for the existing GPU connection and executable paths. Follow the installed README for access, then verify the host live. Never print API keys or treat connection metadata as a passed runtime check.

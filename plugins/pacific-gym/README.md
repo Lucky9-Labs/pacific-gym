@@ -40,3 +40,28 @@ python3 -m pacific_gym extract-keyframes --manifest /absolute/path/.pacific-gym/
 This creates `keyframes/reference/manifest.json` and timestamped PNGs. Existing output is preserved; choose a new run when extracting a different video.
 
 For an authorized existing GPU host, fill in [the optional host setup record](docs/existing-host.example.json) with its endpoint/access method, Blender and Isaac executable paths, current spend, and shutdown evidence. Null fields mean that setup is unverified. The current authorization ceiling is $20 and the shutdown deadline is 2026-09-25 17:00 America/Los_Angeles. This record is documentation only; the package does not read it or create/start infrastructure. Never extend the cap or deadline implicitly.
+
+## Shared worktree environment and GPU discovery
+
+SessionStart and every CLI invocation automatically link a missing checkout `.env`
+to the primary checkout's `.env`, using Git's common-directory metadata. Existing
+files and symlinks are preserved. No home-directory search or secret copy occurs.
+For linking immediately at Git checkout, this repository also supplies
+`.githooks/post-checkout`; enable it with `git config core.hooksPath` set to the
+absolute primary checkout `.githooks` path (preserve any existing hook setup).
+The manual bootstrap accepts an explicit source file and targets the current
+checkout even when invoked from the installed plugin.
+
+Run `python3 -m pacific_gym host-config` to discover GPU settings from the shared
+`.env`. It returns only connection metadata, never BFL/RawTree credentials:
+`PACIFIC_GYM_GPU_ACCESS_METHOD`, `PACIFIC_GYM_MODAL_SANDBOX_ID`,
+`PACIFIC_GYM_MODAL_PYTHON`, `PACIFIC_GYM_GPU_WORKSPACE`,
+`PACIFIC_GYM_BLENDER_EXECUTABLE`, `PACIFIC_GYM_ISAAC_EXECUTABLE`,
+`PACIFIC_GYM_GPU_BUDGET_LIMIT_USD`, and `PACIFIC_GYM_GPU_SHUTDOWN_DEADLINE`.
+For Modal, use the configured local Python runtime and its authenticated Modal
+SDK: `modal.Sandbox.from_id(sandbox_id)` connects to existing compute; it does not
+create a sandbox. Check `poll()` and run the target preflight on that host before
+work. Transfer only required run assets/configuration; do not copy the entire
+credential file to compute. `target-preflight` uses the executable environment
+settings as defaults when its explicit flags are omitted. Metadata never proves
+current availability, spend or shutdown; retain live validation and expiry checks.
