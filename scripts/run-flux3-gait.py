@@ -85,10 +85,11 @@ def main():
         submission = request_json(spec["endpoint"], key, payload)
         if not submission.get("id") or not submission.get("polling_url"):
             raise RuntimeError("BFL response did not include id and polling_url")
-        if urllib.parse.urlparse(submission["polling_url"]).hostname != "api.bfl.ai":
-            raise RuntimeError("Unexpected BFL polling host")
         write_json(state_path, submission)
         print("SUBMITTED_BFL_JOB", submission["id"])
+    polling_url = urllib.parse.urlparse(submission["polling_url"])
+    if polling_url.scheme != "https" or not polling_url.hostname:
+        raise RuntimeError("BFL polling URL is not HTTPS")
     deadline = time.monotonic() + 15 * 60
     while time.monotonic() < deadline:
         result = request_json(submission["polling_url"], key)
