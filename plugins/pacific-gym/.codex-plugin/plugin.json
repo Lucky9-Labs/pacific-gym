@@ -1,6 +1,6 @@
 {
   "name": "pacific-gym",
-  "version": "0.1.0+codex.20260925192613",
+  "version": "0.1.0+codex.20260925192614",
   "description": "Prove each step from generated GLB to an Isaac Sim robot candidate",
   "author": {
     "name": "Lucky9 Labs",
