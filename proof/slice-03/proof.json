@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "slice": "03-flux3-video-gait-reference",
+  "state": "local_preflight_passed_live_blocked_missing_bfl_api_key",
+  "acceptance_command": "sh scripts/accept-flux3-gait.sh",
+  "live_command": "sh scripts/accept-flux3-gait.sh --live",
+  "local_acceptance_exit_code": 0,
+  "live_attempt_exit_code": 3,
+  "blocker": "BFL_API_KEY is unset in the task environment; targeted macOS Keychain service checks for BFL_API_KEY, bfl.ai, api.bfl.ai, and Black Forest Labs found no entry.",
+  "source_assets": {
+    "visual_lod0_sha256": "65c6ef7de40c529c75c82dad8ab0f5ac13638882b1ef1eddee9a49a89ee42af1",
+    "rig_reference_sha256": "4f8bdb1d15ed6d164f1d8fa2aca63c11884f7019ed892f2862c61d5245135506",
+    "fixture": "plugins/pacific-gym/fixtures/strokah-source.json",
+    "source_modified": false,
+    "rig_joint_count": 62,
+    "source_animation_count": 0
+  },
+  "renders": {
+    "tool": "Blender 5.2.1 LTS",
+    "visual_receipt": "proof/slice-03/renders/visual/render.json",
+    "rig_receipt": "proof/slice-03/renders/rig/render.json",
+    "views_per_source": 5,
+    "rig_render_only_exclusions": ["Icosphere", "Terrain_Walk_Test"],
+    "start_frame": "proof/slice-03/renders/visual/three-quarter.png",
+    "start_frame_sha256": "6a3b6b41ccda66838aa249480d3cf47049c54e742bb912fa5d70e7b1cec62dd0",
+    "contact_sheet": "proof/slice-03/source-contact-sheet.png",
+    "contact_sheet_sha256": "36afc29c1883004294fa941d524ff6a2792561b321fe24eaffd6d11b3bf6b95c"
+  },
+  "bfl_request": {
+    "spec": "proof/slice-03/request.json",
+    "spec_sha256": "1ea4a30f6640ecef33b4c4f5dee1c369115f408aad3a2b964bde59c970c4baf0",
+    "endpoint": "https://api.bfl.ai/v1/flux-3-video",
+    "model": "FLUX 3 Video",
+    "version": "latest",
+    "mode": "i2v",
+    "duration_seconds": 5,
+    "resolution": "hd",
+    "aspect_ratio": "1:1",
+    "draft": true,
+    "generate_audio": false,
+    "submitted": false,
+    "video": null
+  },
+  "review": {
+    "source_recognizability": "The five visual and five rig reference views show the same unarmored mechanical silhouette, large shield-like chest shell, long hands, round leg joints, and split feet.",
+    "generated_video_recognizability": "unavailable_no_video",
+    "generated_video_foot_contacts": "unavailable_no_video",
+    "gait_accepted": false
+  },
+  "logs": [
+    "proof/slice-03/acceptance.log",
+    "proof/slice-03/live-attempt.log",
+    "proof/slice-03/blender-visual.log",
+    "proof/slice-03/blender-rig.log"
+  ]
+}

@@ -1,0 +1,92 @@
+11:42:59 | INFO: Data are loaded, start creating Blender stuff
+11:42:59 | INFO: Blender create Mesh node meshes[58]
+11:42:59 | INFO: Blender create Mesh node meshes[58].001
+11:42:59 | INFO: Blender create Mesh node meshes[27]
+11:42:59 | INFO: Blender create Mesh node meshes[76]
+11:42:59 | INFO: Blender create Mesh node meshes[76].001
+11:42:59 | INFO: Blender create Mesh node meshes[54]
+11:42:59 | INFO: Blender create Mesh node meshes[54].001
+11:42:59 | INFO: Blender create Mesh node meshes[68]
+11:42:59 | INFO: Blender create Mesh node meshes[75]
+11:42:59 | INFO: Blender create Mesh node meshes[26]
+11:42:59 | INFO: Blender create Mesh node meshes[26].001
+11:42:59 | INFO: Blender create Mesh node meshes[39]
+11:42:59 | INFO: Blender create Mesh node meshes[39].001
+11:42:59 | INFO: Blender create Mesh node meshes[37]
+11:42:59 | INFO: Blender create Mesh node meshes[37].001
+11:42:59 | INFO: Blender create Mesh node meshes[38]
+11:42:59 | INFO: Blender create Mesh node meshes[0]
+11:42:59 | INFO: Blender create Mesh node meshes[1]
+11:42:59 | INFO: Blender create Mesh node meshes[24]
+11:42:59 | INFO: Blender create Mesh node meshes[24].001
+11:42:59 | INFO: Blender create Mesh node meshes[73]
+11:42:59 | INFO: Blender create Mesh node meshes[64]
+11:42:59 | INFO: Blender create Mesh node meshes[64].001
+11:42:59 | INFO: Blender create Mesh node meshes[60]
+11:42:59 | INFO: Blender create Mesh node meshes[60].001
+11:42:59 | INFO: Blender create Mesh node meshes[55]
+11:42:59 | INFO: Blender create Mesh node meshes[55].001
+11:42:59 | INFO: Blender create Mesh node meshes[69]
+11:42:59 | INFO: Blender create Mesh node meshes[69].001
+11:43:00 | INFO: Blender create Mesh node meshes[67]
+11:43:00 | INFO: Blender create Mesh node meshes[52]
+11:43:00 | INFO: Blender create Mesh node meshes[52].001
+11:43:00 | INFO: Blender create Mesh node meshes[28]
+11:43:00 | INFO: Blender create Mesh node meshes[28].001
+11:43:00 | INFO: Blender create Mesh node meshes[13]
+11:43:00 | INFO: Blender create Mesh node meshes[29]
+11:43:00 | INFO: Blender create Mesh node meshes[3]
+11:43:00 | INFO: Blender create Mesh node meshes[16]
+11:43:00 | INFO: Blender create Mesh node meshes[56]
+11:43:00 | INFO: Blender create Mesh node meshes[48]
+11:43:00 | INFO: Blender create Mesh node meshes[48].001
+11:43:00 | INFO: Blender create Mesh node meshes[65]
+11:43:00 | INFO: Blender create Mesh node meshes[49]
+11:43:00 | INFO: Blender create Mesh node meshes[49].001
+11:43:00 | INFO: Blender create Mesh node meshes[14]
+11:43:00 | INFO: Blender create Mesh node meshes[2]
+11:43:00 | INFO: Blender create Mesh node meshes[61]
+11:43:00 | INFO: Blender create Mesh node meshes[61].001
+11:43:00 | INFO: Blender create Mesh node meshes[31]
+11:43:00 | INFO: Blender create Mesh node meshes[31].001
+11:43:00 | INFO: Blender create Mesh node meshes[70]
+11:43:00 | INFO: Blender create Mesh node meshes[70].001
+11:43:00 | INFO: Blender create Mesh node meshes[35]
+11:43:00 | INFO: Blender create Mesh node meshes[35].001
+11:43:00 | INFO: Blender create Mesh node meshes[44]
+11:43:00 | INFO: Blender create Mesh node meshes[19]
+11:43:00 | INFO: Blender create Mesh node meshes[43]
+11:43:00 | INFO: Blender create Mesh node meshes[43].001
+11:43:00 | INFO: Blender create Mesh node meshes[20]
+11:43:00 | INFO: Blender create Mesh node meshes[20].001
+11:43:00 | INFO: Blender create Mesh node meshes[5]
+11:43:00 | INFO: Blender create Mesh node meshes[7]
+11:43:00 | INFO: Blender create Mesh node meshes[50]
+11:43:00 | INFO: Blender create Mesh node meshes[41]
+11:43:00 | INFO: Blender create Mesh node meshes[41].001
+11:43:00 | INFO: Blender create Mesh node meshes[33]
+11:43:00 | INFO: Blender create Mesh node meshes[33].001
+11:43:00 | INFO: Blender create Mesh node meshes[53]
+11:43:00 | INFO: Blender create Mesh node meshes[11]
+11:43:00 | INFO: Blender create Mesh node meshes[51]
+11:43:00 | INFO: Blender create Mesh node meshes[51].001
+11:43:00 | INFO: Blender create Mesh node meshes[46]
+11:43:00 | INFO: Blender create Mesh node meshes[46].001
+11:43:00 | INFO: Blender create Mesh node meshes[1].001
+11:43:00 | INFO: Blender create Mesh node meshes[8]
+11:43:00 | INFO: Blender create Mesh node meshes[25]
+11:43:00 | INFO: Blender create Mesh node meshes[72]
+11:43:00 | INFO: Blender create Mesh node meshes[72].001
+11:43:00 | INFO: Blender create Mesh node meshes[36]
+11:43:00 | INFO: glTF import finished in 0.22s
+/Users/lucky/.codex/worktrees/81a0/pacific-gym/scripts/render-strokah-views.py:44: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+  floor_material.use_nodes = True
+00:02.209  render           | Saved: '/Users/lucky/.codex/worktrees/81a0/pacific-gym/proof/slice-03/renders/visual/negative-y.png'
+00:02.958  render           | Saved: '/Users/lucky/.codex/worktrees/81a0/pacific-gym/proof/slice-03/renders/visual/positive-y.png'
+00:03.676  render           | Saved: '/Users/lucky/.codex/worktrees/81a0/pacific-gym/proof/slice-03/renders/visual/negative-x.png'
+00:04.486  render           | Saved: '/Users/lucky/.codex/worktrees/81a0/pacific-gym/proof/slice-03/renders/visual/positive-x.png'
+00:05.405  render           | Saved: '/Users/lucky/.codex/worktrees/81a0/pacific-gym/proof/slice-03/renders/visual/three-quarter.png'
+STROKAH_RENDER_PASS /Users/lucky/.codex/worktrees/81a0/pacific-gym/proof/slice-03/renders/visual
+Blender 5.2.1 LTS (hash 9e2066aef7ef built 2026-08-25 01:35:57)
+
+Blender quit

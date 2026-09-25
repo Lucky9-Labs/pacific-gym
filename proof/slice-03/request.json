@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "endpoint": "https://api.bfl.ai/v1/flux-3-video",
+  "model": "FLUX 3 Video",
+  "mode": "i2v",
+  "start_frame": "proof/slice-03/renders/visual/three-quarter.png",
+  "settings": {
+    "duration": 5,
+    "resolution": "hd",
+    "aspect_ratio": "1:1",
+    "generate_audio": false,
+    "safety_tolerance": 2,
+    "draft": true,
+    "version": "latest"
+  },
+  "prompt": "A single continuous full-body three-quarter shot of Strokah, the exact same unarmored matte-white mechanical humanoid in the opening image, walking forward on the flat gray floor toward and slightly past the camera. Preserve the large smooth shield-shaped chest and head shell, broad round shoulder joints, long articulated hands, exposed circular knee and ankle joints, and two-pronged mechanical feet. A weighty, readable mechanical gait: shift the torso over the planted foot, lift the opposite foot clear, swing it forward, place heel then broad toe firmly, transfer weight, repeat with the other leg. Show at least two alternating planted foot contacts and brief single-leg support; no sliding feet, floating, running, dancing, new armor, weapons, extra limbs, redesign, or scene cuts. Keep the entire mech and both feet visible. Locked camera, neutral studio lighting, clear floor contact shadows, no text or music."
+}

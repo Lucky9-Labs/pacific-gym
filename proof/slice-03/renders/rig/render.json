@@ -1,0 +1,47 @@
+{
+  "source_sha256": "4f8bdb1d15ed6d164f1d8fa2aca63c11884f7019ed892f2862c61d5245135506",
+  "blender_version": "5.2.1 LTS",
+  "render_only_exclusions": [
+    "Icosphere",
+    "Terrain_Walk_Test"
+  ],
+  "bounding_box": {
+    "min": [
+      -0.42162811756134033,
+      -0.6447412967681885,
+      0.12598511576652527
+    ],
+    "max": [
+      0.4216281473636627,
+      0.1854109913110733,
+      1.1250280141830444
+    ]
+  },
+  "views": {
+    "negative-y": {
+      "path": "negative-y.png",
+      "sha256": "4bc34b0bd80f3782706103643145d64b3369117f43f6111e5cadcacf43681518",
+      "bytes": 533035
+    },
+    "positive-y": {
+      "path": "positive-y.png",
+      "sha256": "a70decef39e603feefcaa68a082b5785413c8fb930f55eca14538af8a56bf6b2",
+      "bytes": 515857
+    },
+    "negative-x": {
+      "path": "negative-x.png",
+      "sha256": "8aa9fe0f688c8ffb745f07cee6931edb7069ee6b499a34ea78187ae97508560d",
+      "bytes": 506251
+    },
+    "positive-x": {
+      "path": "positive-x.png",
+      "sha256": "4eec68393fb9605a377e4a2559cb291e8e804a758a0067546954c7ae2cf025f5",
+      "bytes": 523142
+    },
+    "three-quarter": {
+      "path": "three-quarter.png",
+      "sha256": "eb1f222888699263d5f50654585685f657b7c07a2e6f04f1899bdb71b4e4add0",
+      "bytes": 588616
+    }
+  }
+}
