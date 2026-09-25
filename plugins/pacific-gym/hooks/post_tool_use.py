@@ -18,8 +18,14 @@ def main() -> int:
     try:
         event = json.loads(sys.stdin.read() or "{}")
         tool_input = event.get("tool_input") or {}
-        command = tool_input.get("command", "") if isinstance(tool_input, dict) else ""
-        if event.get("tool_name") != "Bash" or "candidate-add" not in command:
+        command = ""
+        if isinstance(tool_input, dict):
+            # Claude-style hooks expose Bash.command; Codex tool hooks can expose
+            # exec_command.cmd directly. Codex may also normalize this to Bash.command.
+            command = tool_input.get("command") or tool_input.get("cmd") or ""
+        if event.get("tool_name") not in {"Bash", "exec_command"} or not isinstance(command, str):
+            return 0
+        if "candidate-add" not in command:
             return 0
         output = event.get("tool_response", "")
         if not isinstance(output, str):
