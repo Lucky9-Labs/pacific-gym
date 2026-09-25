@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "endpoint_url": null,
+  "access_method": null,
+  "blender_executable": null,
+  "isaac_executable": null,
+  "budget_limit_usd": 20,
+  "budget_spent_usd": null,
+  "budget_remaining_usd": null,
+  "shutdown_deadline_local": "2026-09-25T17:00:00-07:00",
+  "shutdown_evidence": null
+}

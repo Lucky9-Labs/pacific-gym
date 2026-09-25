@@ -1,13 +1,21 @@
 ---
 name: isaac-ready
-description: Take an attached 3D reference through immutable, hash-tracked Blender and Isaac Sim work to verified GPU walking proof or a specific documented blocker.
+description: Prepare an immutable, hash-tracked 3D derivative for Isaac Sim and verify GPU articulation and walking proof or record a specific blocker.
 ---
 
 # Isaac-ready asset workflow
 
 Read `docs/PLAN.md` and `docs/ARCHITECTURE.md` before starting. Treat attached files as immutable inputs. Keep every derivative, receipt, and proof artifact under `.pacific-gym/runs/<run-id>/`; never write over an input or a tracked source asset.
 
-Use the separate `cultural-industrial-references` skill for image-based artist, animation, and industry research. `run-start` initializes that research state automatically and starts Nimble when `NIMBLE_API_KEY` is present. The dedicated SessionStart research hook also starts a waiting job when that environment variable is present; otherwise it directs Astra to the reference skill, where the key can be read from the clipboard by an explicit command. The long-running Goal must poll and read the tagged receipt before each downstream authoring checkpoint.
+Use the separate `cultural-industrial-references` skill for image-based artist, animation, and industry research. `run-start` initializes research state and starts Nimble when `NIMBLE_API_KEY` is available from the process environment or workspace `.env`. The dedicated SessionStart research hook starts a waiting job when the key is configured; otherwise it directs Astra to the research skill. The long-running Goal polls and reads the tagged receipt before downstream authoring checkpoints.
+
+## Use these services and tools
+
+- Use the bundled Black Forest Labs `flux` MCP only when a new or replacement visual motion reference is requested. Discover its current video-generation tool and arguments from the server. Record the request, settings, returned video, and SHA-256 in the active run. For animation authoring and timestamped review, hand off to `keyframe-generation`.
+- Use Pacific Gym's Python CLI for source inspection, run manifests, hash-verified staging, Blender derivative receipts, and Isaac Sim acceptance. Run Blender through `blender-derive` with an explicit script and declared inputs/outputs; do not substitute a general-purpose Blender MCP for this bounded transformation.
+- Use the Isaac Sim Python launcher (`python.sh` or its platform equivalent) through `target-preflight` and `isaac-run` for the actual GPU simulation and receipt. NVIDIA's Isaac Sim MCP is a documentation-search server, not a simulation runner. If the target host already has that MCP service configured, use it to look up Isaac APIs and examples; never use a docs search result as runtime or walking evidence.
+- Use local Ollama only for advisory visual comparison, with `hf.co/LiquidAI/LFM2.5-VL-3B-GGUF:Q4_K_M` and the recorded model digest. The plugin uses Ollama's local HTTP API; it does not bundle an Ollama MCP server.
+- Use the plugin's fixed-function RawTree trace adapter when a run trace is requested. Do not replace it with a broad RawTree MCP: that server exposes unrelated database and credential administration tools. Never transmit credentials or media bytes into traces.
 
 ## Start the user-requested long-running Goal
 
@@ -31,14 +39,14 @@ cd plugins/pacific-gym
 python3 -m pacific_gym inspect --spec fixtures/strokah-source.json --out .pacific-gym/inspect.json
 ```
 
-The inspection must distinguish the static visual asset from the unanimated mechanical rig reference. Do not infer shared bindings from names. Do not request or infer a premade gait asset: FLUX supplies visual gait direction before production motion authoring.
+The inspection must distinguish the static visual asset from the unanimated mechanical rig reference. Do not infer shared bindings from names. Do not request or infer a premade gait asset: FLUX supplies visual gait direction before production motion authoring. If a new gait visual is needed, use the bundled BFL MCP and pass its pinned result to `keyframe-generation` for sampling and animation review.
 
-The manual `nimble-research` command remains available for one-off research outside an asset run. For run-bound work, use `cultural-industrial-references` so the job state, tagged receipt, and review aids are saved beside the run manifest.
+For one-off research outside a run, `nimble-research --reference <image> --out <directory>` remains available. It captions locally with Ollama and sends only the text description to Nimble. For run-bound work, use `cultural-industrial-references` so the asynchronous job state and tagged source handoff remain attached to the run.
 
 ## Candidate feedback
 For the local static comparison pulse, use Liquid AI's official Ollama model `hf.co/LiquidAI/LFM2.5-VL-3B-GGUF:Q4_K_M`. Check its resolved digest against `proof/slice-06/proof.json` and run `sh scripts/accept-comparison-pulse.sh` from the repository root.
 
-For animation review, render Blender candidate PNGs at the sample timestamps in the pinned FLUX frame manifest. After each render is complete, run `python3 -m pacific_gym publish-candidate-frame` with the exact frame ID and timestamp, then run `python3 -m pacific_gym judge-keyframes` with the reference manifest, candidate directory, and run-local result directory. The watcher calls Ollama only for complete hash-verified pairs with matching IDs, timestamps, and dimensions. Its visual result is advisory; it does not prove gait or physics. The separate `PostToolUse` hook compares explicit `candidate-add` renders against pinned run frames. See the repository README for command examples.
+For visual animation authoring and timestamp-paired frame review, use the separate `keyframe-generation` skill. Those visual judgments are advisory and do not prove gait or physics.
 
 Record each candidate PNG after a render or candidate-producing batch:
 
@@ -50,6 +58,15 @@ python3 -m pacific_gym candidate-add --manifest /absolute/path/.pacific-gym/runs
 The installed `PostToolUse` hook reacts only to this explicit command while a run is active. If pinned reference PNGs exist and local Ollama is available, it compares them and records the model digest, source and render hashes, visual-pair hash, evidence, confidence, and next action in the run manifest. Comparison failure is advisory and never promotes a candidate. It does not create a Goal, infer acceptance, or watch unrelated tool batches. Set `PACIFIC_GYM_OLLAMA_HOST` or `PACIFIC_GYM_VISION_MODEL` to override local defaults.
 
 ## Blender derivative
+
+Before starting target work, run the target preflight on that machine. It checks the resolved manifest/run path, every pinned input path, writable run storage, Blender and Isaac Sim executable startup probes, supported OS, and a live NVIDIA GPU query. Supply the actual target executable paths; do not infer installation from a prior machine's result:
+
+```sh
+python3 -m pacific_gym target-preflight --manifest /absolute/path/.pacific-gym/runs/<id>/run.json \
+  --blender /path/to/blender --isaac /path/to/isaac-sim/python.sh
+```
+
+Resolve mount symlinks by using the canonical manifest location printed by the tool. The loader accepts a symlink alias only when its recorded manifest resolves to the same file, and normalizes subsequent writes to the canonical path. Stop on any failed prerequisite before running Blender or Isaac Sim.
 
 Use Blender's background Python interface with a script that consumes the passed `--inputs` and `--outputs` lists. The wrapper stages read-only, hash-verified copies under the run, confines outputs to `derivatives/`, checks original and staged hashes after execution, captures Blender's version and stdout/stderr, and writes a JSON receipt with exact input/output SHA-256 values:
 

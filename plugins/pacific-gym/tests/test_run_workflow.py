@@ -57,15 +57,13 @@ class RunWorkflowTest(unittest.TestCase):
             started = research.start_run_research(self.manifest, "test-key", "local-test-model")
             self.assertEqual(started["status"], "running")
             self.assertEqual(run.load(self.manifest)["reference_research"]["job"]["run_id"], "nimble-run")
-
             finished = research.poll_run_research(self.manifest, "test-key")
 
         self.assertEqual(finished["status"], "complete")
         self.assertEqual(finished["source_count"], 1)
-        receipt_path = Path(finished["receipt"])
-        receipt = json.loads(receipt_path.read_text())
+        receipt = json.loads(Path(finished["receipt"]).read_text())
         self.assertFalse(receipt["input"]["media_sent_to_nimble"])
-        self.assertIn("Isaac Sim handoff", receipt["tagged_references"][0]["used_by"])
+        self.assertEqual(receipt["tagged_references"][0]["used_by"], "Isaac Sim handoff")
         self.assertTrue(Path(finished["flux_prompt"]).is_file())
         self.assertTrue(Path(finished["reference_map"]).is_file())
         self.assertIn("cultural-industrial-references", run.goal_text(run.load(self.manifest)))
@@ -78,6 +76,19 @@ class RunWorkflowTest(unittest.TestCase):
             self.assertEqual(research.configured_key(self.workspace), "test-key-value")
         with patch.dict(os.environ, {"NIMBLE_API_KEY": "environment-key"}):
             self.assertEqual(research.configured_key(self.workspace), "environment-key")
+
+    def test_manifest_load_normalizes_a_symlink_alias_to_its_resolved_path(self):
+        resolved_workspace = self.workspace.resolve()
+        alias_root = resolved_workspace / "mount-alias"
+        alias_root.symlink_to(resolved_workspace, target_is_directory=True)
+        alias_manifest = alias_root / self.manifest.relative_to(resolved_workspace)
+        data = json.loads(self.manifest.read_text())
+        data["manifest"] = str(alias_manifest)
+        self.manifest.write_text(json.dumps(data))
+
+        loaded = run.load(alias_manifest)
+
+        self.assertEqual(loaded["manifest"], str(self.manifest.resolve()))
 
     def test_candidate_requires_png_and_feedback_is_tied_to_candidate_hash(self):
         candidate = run.add_candidate(self.manifest, self.png, "render")
@@ -111,8 +122,7 @@ class RunWorkflowTest(unittest.TestCase):
         env["PLUGIN_ROOT"] = str(PLUGIN)
         result = subprocess.run([sys.executable, str(PLUGIN / "hooks" / "reference_research.py")],
                                 input=event, capture_output=True, text=True, env=env, check=True)
-        output = json.loads(result.stdout)
-        context = output["hookSpecificOutput"]["additionalContext"]
+        context = json.loads(result.stdout)["hookSpecificOutput"]["additionalContext"]
         self.assertIn("cultural-industrial-references", context)
         self.assertIn("run-research-start", context)
         self.assertEqual(run.load(self.manifest)["reference_research"]["status"],
@@ -176,6 +186,48 @@ class RunWorkflowTest(unittest.TestCase):
         self.assertIn("comparison recorded", stdout.getvalue())
         self.assertEqual(len(run.load(self.manifest)["feedback"]), 1)
         event["tool_input"]["command"] = "python -m pacific_gym run-status"
+        stdout = io.StringIO()
+        with patch.object(sys, "stdin", io.StringIO(json.dumps(event))), patch("sys.stdout", stdout), \
+                patch.object(compare, "compare_general", side_effect=AssertionError("should not compare")):
+            self.assertEqual(post_tool_use.main(), 0)
+        self.assertEqual(stdout.getvalue(), "")
+
+    def test_post_tool_use_supports_codex_exec_command_payload(self):
+        import pacific_gym.compare as compare
+        sys.path.insert(0, str(PLUGIN / "hooks"))
+        import post_tool_use
+        sys.path.remove(str(PLUGIN / "hooks"))
+        frame = self.workspace / "frame.png"
+        frame.write_bytes(b"frame")
+        data = run.load(self.manifest)
+        data["inputs"].append({**run._input("reference_frame", frame)})
+        run.save(data)
+        candidate = run.add_candidate(self.manifest, self.png, "render")
+        receipt = {
+            "inputs": [{"sha256": "frame"}, {"sha256": candidate["sha256"]}],
+            "visual_pair": {"sha256": "pair-hash"},
+            "model": {"tag": "liquid", "digest": "resolved-model-digest"},
+            "comparison": {"confidence": "high", "evidence": "matched", "next_action": "keep"},
+        }
+        event = {
+            "hook_event_name": "PostToolUse",
+            "cwd": str(self.workspace),
+            "tool_name": "exec_command",
+            "tool_input": {"cmd": "python -m pacific_gym candidate-add render.png"},
+            "tool_response": {"content": [{"type": "text", "text": f"PACIFIC_GYM_CANDIDATE={candidate['id']}"}]},
+        }
+        stdout = io.StringIO()
+        with patch.object(sys, "stdin", io.StringIO(json.dumps(event))), patch("sys.stdout", stdout), \
+                patch.object(compare, "compare_general", return_value=receipt):
+            self.assertEqual(post_tool_use.main(), 0)
+        self.assertIn("comparison recorded", stdout.getvalue())
+        feedback = run.load(self.manifest)["feedback"]
+        self.assertEqual(len(feedback), 1)
+        self.assertEqual(feedback[0]["receipt"]["inputs"][1]["sha256"], candidate["sha256"])
+        self.assertEqual(feedback[0]["receipt"]["visual_pair"]["sha256"], "pair-hash")
+        self.assertEqual(feedback[0]["receipt"]["model"]["digest"], "resolved-model-digest")
+
+        event["tool_input"]["cmd"] = "python -m pacific_gym run-status"
         stdout = io.StringIO()
         with patch.object(sys, "stdin", io.StringIO(json.dumps(event))), patch("sys.stdout", stdout), \
                 patch.object(compare, "compare_general", side_effect=AssertionError("should not compare")):

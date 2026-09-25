@@ -9,7 +9,3 @@ Keyframe extraction stores timestamped, whole-frame images and a source-hash man
 Blender and Isaac adapters hash immutable inputs, constrain outputs to the run, and record receipts. `target-preflight` checks a user-supplied existing host; it does not provision one. The CLI does not expose `validate-usd` or `promote`; articulation and walking acceptance are gated by the Isaac adapter receipt and run lifecycle.
 
 Optional existing-host configuration is documented in `existing-host.example.json`: endpoint/access route, exact Blender and Isaac executable paths, remaining budget, and shutdown control/evidence. Null values indicate unverified setup. The record is informational and is not consumed by the CLI. No infrastructure changes are performed by this package.
-
-## Cultural and industrial reference intake
-
-The separate `cultural-industrial-references` skill owns source research and downstream routing. `run-start` starts an asynchronous Nimble job when `NIMBLE_API_KEY` is available in the process environment or workspace `.env`; the dedicated `SessionStart` hook starts a waiting job or directs Astra to the skill. Ollama captions the local reference image and only the text caption is sent to Nimble. The run stores job state, tagged source receipt, FLUX draft, and filterable source map. Astra polls at authoring checkpoints and routes artist/motion leads to visual direction, Blender sources to rig authoring, and Isaac Sim engineering sources to simulation planning. Provider tags remain leads and do not prove this asset's rig or physics.

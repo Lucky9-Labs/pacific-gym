@@ -12,6 +12,56 @@ from .cli import sha256
 from .run import load, record_check
 
 
+def environment_check(manifest: Path, blender: str, isaac: str) -> dict:
+    """Verify target runtimes and the relocated run are usable before doing work."""
+    data = load(manifest)
+    run_dir = Path(data["manifest"]).parent.resolve()
+    if platform.system() not in {"Linux", "Windows"}:
+        raise ValueError(f"Isaac Sim GPU runtime requires Linux or Windows; current host is {platform.system()}")
+    nvidia_smi = shutil.which("nvidia-smi")
+    if not nvidia_smi:
+        raise ValueError("nvidia-smi is missing; Isaac Sim GPU prerequisites are not available")
+    gpu = subprocess.run([nvidia_smi, "--query-gpu=name", "--format=csv,noheader"],
+                         check=False, capture_output=True, text=True, timeout=30)
+    names = [line.strip() for line in gpu.stdout.splitlines() if line.strip()]
+    if gpu.returncode or not names:
+        raise ValueError(f"NVIDIA GPU startup probe failed: {gpu.stderr[-1000:]}")
+    if not run_dir.is_dir() or not os.access(run_dir, os.W_OK):
+        raise ValueError(f"Relocated run directory is not writable: {run_dir}")
+    missing_inputs = [item["path"] for item in data.get("inputs", [])
+                      if not Path(item["path"]).is_file()]
+    if missing_inputs:
+        raise ValueError(f"Run manifest references missing target inputs: {missing_inputs}")
+    resolved = {}
+    for name, value in (("Blender", blender), ("Isaac Sim", isaac)):
+        candidate = Path(value).expanduser()
+        executable = shutil.which(value) if not candidate.is_absolute() else str(candidate)
+        if not executable or not Path(executable).is_file():
+            raise ValueError(f"{name} executable is missing on this target: {value}")
+        executable = str(Path(executable).resolve(strict=True))
+        if os.name != "nt" and not os.access(executable, os.X_OK):
+            raise ValueError(f"{name} executable is not executable: {executable}")
+        command = ([executable, "--version"] if name == "Blender" else
+                   [executable, "-c", "from isaacsim import SimulationApp; app=SimulationApp({'headless': True}); app.close()"])
+        try:
+            # Isaac's headless SimulationApp construction exercises Kit startup,
+            # extensions, and GPU initialization rather than just Python itself.
+            probe = subprocess.run(command, check=False, capture_output=True, text=True,
+                                   timeout=120 if name == "Blender" else 600)
+        except (OSError, subprocess.SubprocessError) as error:
+            raise ValueError(f"{name} is present but failed its startup probe: {error}") from error
+        output = (probe.stdout + "\n" + probe.stderr).strip()
+        if probe.returncode != 0 or (name == "Blender" and not output):
+            raise ValueError(f"{name} startup probe failed (exit {probe.returncode}): {output[-1000:]}")
+        resolved[name.lower().replace(" ", "_")] = {
+            "executable": executable,
+            "version": output.splitlines()[0] if output else "headless SimulationApp startup passed",
+        }
+    return {"manifest": str(Path(manifest).expanduser().resolve(strict=True)),
+            "run_directory": str(run_dir), "runtimes": resolved,
+            "gpu_names": names, "ready": True}
+
+
 def _inside(path: Path, root: Path) -> bool:
     return path.resolve().is_relative_to(root.resolve())
 

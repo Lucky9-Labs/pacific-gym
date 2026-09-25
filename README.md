@@ -4,9 +4,9 @@ Pacific Gym is a Codex plugin for turning a generated 3D character and a mechani
 
 Start with [the delivery plan](docs/PLAN.md), [the architecture](docs/ARCHITECTURE.md), and [the proof index](proof/index.json). A passing feature worktree updates the proof index before it is merged.
 
-The current Strokah source packet is a reference handoff, not a validated physics asset. The gameplay LOD0 has no skeleton; the clean mechanical rig reference has 62 joints and no animation. FLUX 3 Video will generate the gait visual before the target machine starts authoring motion for the GLB derivative.
+The current Strokah source packet is a reference handoff, not a validated physics asset. The gameplay LOD0 has no skeleton; the clean mechanical rig reference has 62 joints and no animation. FLUX 3 Video will generate the gait visual before the target machine starts authoring motion for the GLB derivative. The plugin separates these stages: `keyframe-generation` covers motion-reference keyframes and visual iteration, while `isaac-ready` covers immutable asset preparation and Isaac Sim GPU acceptance.
 
-The first local acceptance command is `sh scripts/accept-source-intake.sh`. The repo-local plugin is in `plugins/pacific-gym` and its marketplace entry is in `.agents/plugins/marketplace.json`. Codex must trust a plugin hook before that hook executes in a session.
+The first local acceptance command is `sh scripts/accept-source-intake.sh`. The repo-local plugin is in `plugins/pacific-gym` and its marketplace entry is in `.agents/plugins/marketplace.json`. Codex must trust a plugin hook before that hook executes in a session. The plugin bundles Black Forest Labs' official `https://mcp.bfl.ai` MCP for requested FLUX motion-reference generation. Its skills route local Ollama through the existing HTTP adapter and Blender/Isaac Sim through Pacific Gym's bounded CLI wrappers.
 
 The latest industrial FLUX 3 Video candidate is [the full MP4](proof/slice-03/strokah-flux3-industrial.mp4). Its [S3 publication receipt](proof/slice-03/s3-publication.json) records immutable object versions and verified readback hashes for the MP4 and [Astra handoff manifest](proof/slice-03/s3-industrial-manifest.json). The manifest includes the full video, source asset versions, prompt, settings, and uncropped frame sampling details. This is visual direction only: planted feet drift, so gait and physics are not accepted.
 
@@ -16,6 +16,8 @@ For local installs, `.codex-plugin/plugin.json` is the package manifest. Codex C
 RawTree trace acceptance is `sh scripts/accept-rawtree-trace.sh`. It runs local trace/redaction checks, then uses `RAWTREE_API_KEY` (or `--api-key-file /absolute/path` passed to the script) to insert redacted event rows into `luckybucky_hackathon` and query them back by run ID. Every row includes the Codex session and thread IDs. RawTree table names cannot contain hyphens, and nested tool input/result values are stored as canonical JSON strings to prevent RawTree from flattening their keys into dotted columns. RawTree separates write ingestion from its read-only SQL query API; its published MCP reference documents whole-table deletion with admin permission, but no row-delete operation. A write-enabled data key therefore does not make mutation SQL available through the query endpoint. The acceptance command records this limitation and exits 2 after a successful round-trip until a supported row-level cleanup mechanism is available. See [the RawTree trace notes](proof/slice-02/README.md) for the live verification state and source links. Proof excludes API keys and media bytes. The current fixture is a representative replay of the source inspection proof, so its capture timing does not claim to measure the original inspection run.
 
 The controlled Liquid vision comparison pulse uses Liquid AI's official `hf.co/LiquidAI/LFM2.5-VL-3B-GGUF:Q4_K_M` model in local Ollama. Its exact tested digest, setup, and visual proof are in [proof/slice-06/README.md](proof/slice-06/README.md). Run it with `sh scripts/accept-comparison-pulse.sh`. The installed plugin also compares explicit `candidate-add` renders against pinned frames; this returns advisory visual feedback and does not establish rig validity, physics, or walking. The fresh CLI hook proof is in [proof/slice-07/README.md](proof/slice-07/README.md).
+
+Use `keyframe-generation` for FLUX motion references, frame extraction, Blender keyframe renders, and timestamp-paired visual review. Use `isaac-ready` for immutable source intake, hash-checked Blender derivatives, and Isaac Sim GPU acceptance. The Isaac Sim documentation MCP can be run separately on a configured target host for API lookup; it is not a simulator runner or a required plugin dependency. The official Blender MCP can execute unguarded generated code, so Pacific Gym uses its explicit script wrapper instead. Ollama is local HTTP, and trace export uses the plugin's fixed-purpose RawTree adapter rather than a general RawTree MCP with unrelated management tools.
 
 For animation review, `pacific-gym judge-keyframes` watches for timestamp-paired FLUX reference frames and Blender candidate renders. Render each candidate to a PNG with the frame ID from the reference manifest, then mark it complete only after Blender finishes writing it:
 
@@ -32,35 +34,12 @@ PYTHONPATH=plugins/pacific-gym python3 -m pacific_gym judge-keyframes \
   --out-dir .pacific-gym/runs/<run-id>/paired-judgments
 ```
 
-The watcher checks immutable reference hashes, matching frame IDs and timestamps, candidate completion/hash, and equal image dimensions before calling local Ollama. It emits one structured advisory result per completed pair and waits on missing or mismatched frames. Stop it with Ctrl-C. The separate `PostToolUse` hook compares explicit `candidate-add` renders against pinned run frames; neither path establishes physics, gait, or Isaac Sim acceptance. Run the deterministic keyframe gate checks with `PYTHONPATH=plugins/pacific-gym python3 -m unittest discover -s plugins/pacific-gym/tests -p 'test_keyframe_judge.py' -v`.
+The watcher checks immutable reference hashes, matching frame IDs and timestamps, candidate completion/hash, equal image dimensions, and right-edge clipping before calling local Ollama. It waits until every timestamp in the reference manifest has a ready candidate, so one early frame is not judged on its own. Foreground reaching the right edge holds that frame until its framing is fixed and it is republished. The watcher emits structured advisory results for the synchronized set; it does not establish physics, gait, or Isaac Sim acceptance. Stop it with Ctrl-C. The separate `PostToolUse` hook compares explicit `candidate-add` renders against pinned run frames. Run the deterministic keyframe gate checks with `PYTHONPATH=plugins/pacific-gym python3 -m unittest discover -s plugins/pacific-gym/tests -p 'test_keyframe_judge.py' -v`.
 
 ## Nimble reference research
 
-`pacific-gym nimble-research` first describes a local reference image with the configured Ollama vision model, then uses Nimbleway Web Search Agents to find cited animation, artist, and Isaac Sim/physics resources. The image stays local; only its visual description goes to Nimble. It writes `.json` research evidence and a `flux-prompt-draft.txt` under the requested output directory. The draft is not submitted to FLUX automatically.
+The standalone `nimble-research` command captions a local reference image with Ollama, then uses Nimbleway Web Search Agents to find cited animation, artist, and Isaac Sim/physics resources. The image stays local; only the visual description is sent to Nimble. The generated prompt is a review aid and is not submitted to FLUX automatically.
 
-For asset runs, use the separate `cultural-industrial-references` plugin skill. `run-start` creates a run-bound research state and automatically starts the asynchronous Nimble job when `NIMBLE_API_KEY` is available; on macOS, pass `--clipboard-key` to `run-start` to read a copied key without logging or saving it. The dedicated `SessionStart` research hook also starts a waiting job when the environment key is available; without it, the hook directs Astra to the skill, which can start the job later. The skill polls the job at authoring checkpoints and saves the tagged receipt, FLUX draft, and filterable map under `.pacific-gym/runs/<run-id>/research/`. The run Goal tells Astra when to poll and which tags can steer FLUX, Blender, or Isaac Sim. The image remains local; only its local Ollama caption is sent to Nimble.
+For asset runs, use the separate `cultural-industrial-references` skill. `run-start` creates a run-bound research state and starts the asynchronous Nimble job when `NIMBLE_API_KEY` is available from the process environment or workspace `.env`. On macOS, pass `--clipboard-key` to read a copied key without logging or saving it. The dedicated `SessionStart` hook starts a waiting job when the key is configured and otherwise directs Astra to the reference skill. The skill polls the job at authoring checkpoints and saves the tagged receipt, FLUX draft, and source map under `.pacific-gym/runs/<run-id>/research/`. The run Goal tells Astra when to poll and how FLUX, Blender, and Isaac Sim tags steer their respective stages. Only the local Ollama caption is sent to Nimble.
 
-For an already active run, start or poll research with:
-
-```sh
-python3 -m pacific_gym run-research-start --manifest .pacific-gym/runs/<run-id>/run.json --clipboard-key
-python3 -m pacific_gym run-research-poll --manifest .pacific-gym/runs/<run-id>/run.json --clipboard-key
-```
-
-On macOS, with a Nimbleway API key copied to the clipboard:
-
-```sh
-PYTHONPATH=plugins/pacific-gym python3 -m pacific_gym nimble-research \
-  --reference proof/slice-03/renders/visual/three-quarter.png \
-  --out .pacific-gym/nimble/strokah \
-  --clipboard-key
-```
-
-Alternatively set `NIMBLE_API_KEY` in the environment or ignored root `.env`. The key is held in process memory only and is not included in output. Nimble's API is text research, so the image caption is generated locally rather than uploading image bytes.
-
-The command writes `nimble-research.json`, `flux-prompt-draft.txt`, and a filterable `reference-map.html`. The receipt separates artist and animation leads for FLUX from Blender rigging and Isaac Sim physics references; inferred identity matches are tagged and excluded from the prompt. Render a local static map from the receipt with:
-
-```sh
-python3 scripts/render-nimble-reference-map.py \
-  --receipt .pacific-gym/nimble/strokah/nimble-research.json
-```
+For an active run, use `python3 -m pacific_gym run-research-start --manifest <run.json>` and `python3 -m pacific_gym run-research-poll --manifest <run.json>`. Add `--clipboard-key` only when the key is not available through the environment or workspace `.env` and remains on the clipboard.

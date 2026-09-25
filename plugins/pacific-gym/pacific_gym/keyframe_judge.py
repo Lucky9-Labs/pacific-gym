@@ -34,6 +34,26 @@ ambiguous, use verdict "uncertain" and say why. Return only JSON with exactly:
 {"verdict":"match|partial|mismatch|uncertain","evidence":"specific visible comparison","discrepancies":["..."],"next_steer":"one concise Blender animation edit instruction or inspect request","confidence":"high|medium|low"}
 No numeric score. Do not claim that one image is walking or stable by itself."""
 
+JUDGE_FIELDS = {"verdict", "evidence", "discrepancies", "next_steer", "confidence"}
+
+
+def _parse_judge_response(response: dict) -> dict:
+    content = response.get("message", {}).get("content", "")
+    parsed = json.loads(content)
+    if not isinstance(parsed, dict) or set(parsed) != JUDGE_FIELDS:
+        raise ValueError(f"Unexpected paired-judge fields: {list(parsed) if isinstance(parsed, dict) else type(parsed).__name__}")
+    if parsed["verdict"] not in {"match", "partial", "mismatch", "uncertain"}:
+        raise ValueError("Invalid paired-judge verdict")
+    if parsed["confidence"] not in {"high", "medium", "low"}:
+        raise ValueError("Invalid paired-judge confidence")
+    if not isinstance(parsed["evidence"], str) or not parsed["evidence"].strip():
+        raise ValueError("Paired-judge evidence must be non-empty text")
+    if not isinstance(parsed["discrepancies"], list) or any(not isinstance(x, str) for x in parsed["discrepancies"]):
+        raise ValueError("Paired-judge discrepancies must be a list of strings")
+    if not isinstance(parsed["next_steer"], str) or not parsed["next_steer"].strip():
+        raise ValueError("Paired-judge next_steer must be non-empty text")
+    return parsed
+
 
 def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
@@ -134,13 +154,33 @@ def ready_candidate(ref: dict, candidate_dir: Path) -> dict | None:
         with Image.open(image_path) as image:
             image.verify()
         with Image.open(image_path) as image:
-            if image.size != ref["dimensions"]:
+            if image.size != ref["dimensions"] or _right_edge_clipped(image):
                 return None
     except Exception:
         return None
     return {"path": image_path, "sha256": sidecar["sha256"],
             "test_fixture": bool(sidecar.get("test_fixture", False)),
             "fixture_note": sidecar.get("fixture_note")}
+
+
+def _right_edge_clipped(image: Image.Image) -> bool:
+    """Reject a render with foreground pixels pressed against the right edge."""
+    rgb = image.convert("RGB")
+    width, height = rgb.size
+    if width < 3 or height < 3:
+        return False
+    pixels = rgb.load()
+    corners = [pixels[0, 0], pixels[width - 1, 0],
+               pixels[0, height - 1], pixels[width - 1, height - 1]]
+    background = tuple(sorted(c[channel] for c in corners)[len(corners) // 2]
+                       for channel in range(3))
+    # Ignore the bottom edge, which commonly contains the ground plane. A
+    # non-background run on the rightmost two columns indicates a clipped subject.
+    for y in range(1, height - 1):
+        for x in (width - 1, width - 2):
+            if sum(abs(pixels[x, y][channel] - background[channel]) for channel in range(3)) > 48:
+                return True
+    return False
 
 
 def verify_model(model: str, host: str) -> dict:
@@ -182,25 +222,28 @@ def judge_pair(ref: dict, candidate: dict, out_dir: Path, model: str, host: str,
     result_path = out_dir / f"{ref['frame_id']}.json"
     pair_path = out_dir / f"{ref['frame_id']}-pair.png"
     pair_bytes = _make_pair(ref["path"], candidate["path"], pair_path)
-    response = post_json(f"{host.rstrip('/')}/api/chat", {
+    request = {
         "model": model, "stream": False, "format": "json",
-        "options": {"temperature": 0, "num_ctx": 8192, "num_predict": 350},
+        "options": {"temperature": 0, "num_ctx": 8192, "num_predict": 768},
         "messages": [{"role": "user", "content": PROMPT,
                       "images": [base64.b64encode(pair_bytes).decode("ascii")]}],
-    }, timeout=300)
-    parsed = json.loads(response.get("message", {}).get("content", ""))
-    if set(parsed) != {"verdict", "evidence", "discrepancies", "next_steer", "confidence"}:
-        raise ValueError(f"Unexpected paired-judge fields: {list(parsed)}")
-    if parsed["verdict"] not in {"match", "partial", "mismatch", "uncertain"}:
-        raise ValueError("Invalid paired-judge verdict")
-    if parsed["confidence"] not in {"high", "medium", "low"}:
-        raise ValueError("Invalid paired-judge confidence")
-    if not isinstance(parsed["evidence"], str) or not parsed["evidence"].strip():
-        raise ValueError("Paired-judge evidence must be non-empty text")
-    if not isinstance(parsed["discrepancies"], list) or any(not isinstance(x, str) for x in parsed["discrepancies"]):
-        raise ValueError("Paired-judge discrepancies must be a list of strings")
-    if not isinstance(parsed["next_steer"], str) or not parsed["next_steer"].strip():
-        raise ValueError("Paired-judge next_steer must be non-empty text")
+    }
+    response = None
+    try:
+        response = post_json(f"{host.rstrip('/')}/api/chat", request, timeout=300)
+        parsed = _parse_judge_response(response)
+    except (json.JSONDecodeError, ValueError) as first_error:
+        # Liquid can occasionally stop mid-object. Retry the exact same immutable
+        # pair with a larger output budget; never repair or infer missing fields.
+        request["options"]["num_predict"] = 1536
+        try:
+            response = post_json(f"{host.rstrip('/')}/api/chat", request, timeout=300)
+            parsed = _parse_judge_response(response)
+        except (json.JSONDecodeError, ValueError) as retry_error:
+            raise ValueError(
+                "Liquid paired judge returned invalid/incomplete JSON twice "
+                f"(first: {first_error}; retry: {retry_error})"
+            ) from retry_error
     result = {
         "schema_version": 1,
         "status": "pipeline_self_test" if candidate.get("test_fixture") else "paired_judgment",
@@ -253,26 +296,33 @@ def run_judge(reference_manifest: Path, candidate_dir: Path, out_dir: Path, mode
     while True:
         previous = {ref["frame_id"]: _existing_judgment(out_dir / f"{ref['frame_id']}.json", ref)
                     for ref in refs}
-        for ref in refs:
-            candidate = ready_candidate(ref, candidate_dir)
-            old_judgment = previous[ref["frame_id"]]
-            if old_judgment is not None:
-                if candidate is not None and old_judgment["pair"]["synthetic_candidate"].get("sha256") != candidate["sha256"]:
-                    raise ValueError(f"Existing judgment conflicts with current pair {ref['frame_id']}; use a fresh output directory")
-                continue
-            if candidate is None:
-                continue
-            result = judge_pair(ref, candidate, out_dir, model, host, model_info)
-            emitted += 1
-            if not once:
-                print(json.dumps({"judge_ready": result["frame_id"],
-                                  "timestamp_seconds": result["timestamp_seconds"],
-                                  "status": result["status"], "judge": result["judge"],
-                                  "result_path": str(out_dir / f"{result['frame_id']}.json")}), flush=True)
+        candidates = {ref["frame_id"]: ready_candidate(ref, candidate_dir) for ref in refs}
+        # Treat one animation review as a synchronized batch. Do not let an
+        # early frame become a standalone judgment while later timestamps are
+        # still rendering or awaiting framing repair.
+        batch_ready = all(previous[ref["frame_id"]] is not None or
+                          candidates[ref["frame_id"]] is not None for ref in refs)
+        if batch_ready:
+            for ref in refs:
+                candidate = candidates[ref["frame_id"]]
+                old_judgment = previous[ref["frame_id"]]
+                if old_judgment is not None:
+                    if candidate is not None and old_judgment["pair"]["synthetic_candidate"].get("sha256") != candidate["sha256"]:
+                        raise ValueError(f"Existing judgment conflicts with current pair {ref['frame_id']}; use a fresh output directory")
+                    continue
+                result = judge_pair(ref, candidate, out_dir, model, host, model_info)
+                emitted += 1
+                if not once:
+                    print(json.dumps({"judge_ready": result["frame_id"],
+                                      "timestamp_seconds": result["timestamp_seconds"],
+                                      "status": result["status"], "judge": result["judge"],
+                                      "result_path": str(out_dir / f"{result['frame_id']}.json")}), flush=True)
         already = sum((out_dir / f"{ref['frame_id']}.json").is_file() for ref in refs)
         state = {"status": "scan_complete" if once else "watching", "judge_results_emitted": emitted,
                  "completed_pair_judgments": already,
-                 "pairs_waiting": len(refs) - already, "result_directory": str(out_dir)}
+                 "pairs_waiting": len(refs) - already,
+                 "batch_ready": batch_ready,
+                 "result_directory": str(out_dir)}
         if once:
             return state
         time.sleep(poll_seconds)
