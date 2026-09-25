@@ -2,6 +2,13 @@
   "schema_version": 1,
   "project": "pacific-gym",
   "fixture": "strokah",
-  "slices": [],
+  "slices": [
+    {
+      "id": "01-plugin-source-intake",
+      "state": "local_checks_passed_runtime_install_pending",
+      "proof": "proof/slice-01/proof.json",
+      "acceptance_command": "sh scripts/accept-source-intake.sh"
+    }
+  ],
   "gpu_handoff": null
 }

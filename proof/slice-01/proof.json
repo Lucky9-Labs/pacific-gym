@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "slice": "plugin-source-intake",
+  "status": "local_checks_passed_runtime_install_pending",
+  "acceptance_command": "sh scripts/accept-source-intake.sh",
+  "report": "proof/slice-01/inspect.json",
+  "report_sha256": "ca48ae748f575b88f1a6f746f85c2e2e1c4fbbd76190032a95072de9c84c39c8",
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "assets": [
+    {
+      "role": "visual_lod0",
+      "sha256": "65c6ef7de40c529c75c82dad8ab0f5ac13638882b1ef1eddee9a49a89ee42af1",
+      "uri": "s3://mech-art-library-20260905225047699700000001/models/mechs/strokah-skeleton/isaacsim-source/v1/strokah-gameplay-lod0.glb?versionId=Bqdb5ye7bhjfF5p9GfliwOhpEpeTgCZL"
+    },
+    {
+      "role": "rig_reference",
+      "sha256": "4f8bdb1d15ed6d164f1d8fa2aca63c11884f7019ed892f2862c61d5245135506",
+      "uri": "s3://mech-art-library-20260905225047699700000001/models/mechs/strokah-skeleton/isaacsim-source/v1/strokah-mech-static-rig.glb?versionId=ogQqgs1P9Hs8QZCxLHXGelUlp7kbDqad"
+    }
+  ],
+  "checks": [
+    "plugin package shape",
+    "plugin creator validator",
+    "hook script direct execution",
+    "S3 versioned readback and SHA-256",
+    "distinct GLB structures"
+  ],
+  "pending": [
+    "Codex desktop plugin installation and hook trust"
+  ]
+}

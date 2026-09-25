@@ -1,0 +1,20 @@
+{
+  "name": "pacific-gym",
+  "version": "0.1.0",
+  "description": "Prove each step from generated GLB to an Isaac Sim robot candidate",
+  "author": {
+    "name": "Lucky9 Labs",
+    "url": "https://github.com/Lucky9-Labs"
+  },
+  "repository": "https://github.com/Lucky9-Labs/pacific-gym",
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Pacific Gym",
+    "shortDescription": "Build and verify physics-ready 3D assets",
+    "longDescription": "Inspect immutable 3D sources and collect proof for each step toward an Isaac Sim robot.",
+    "developerName": "Lucky9 Labs",
+    "category": "Development",
+    "capabilities": ["Interactive", "Write"],
+    "defaultPrompt": ["Inspect the Strokah source assets and show their rig structures."]
+  }
+}
