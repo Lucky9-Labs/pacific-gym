@@ -1,11 +1,19 @@
 ---
 name: isaac-ready
-description: Take an attached 3D reference through immutable, hash-tracked Blender and Isaac Sim work to verified GPU walking proof or a specific documented blocker.
+description: Prepare an immutable, hash-tracked 3D derivative for Isaac Sim and verify GPU articulation and walking proof or record a specific blocker.
 ---
 
 # Isaac-ready asset workflow
 
 Read `docs/PLAN.md` and `docs/ARCHITECTURE.md` before starting. Treat attached files as immutable inputs. Keep every derivative, receipt, and proof artifact under `.pacific-gym/runs/<run-id>/`; never write over an input or a tracked source asset.
+
+## Use these services and tools
+
+- Use the bundled Black Forest Labs `flux` MCP only when a new or replacement visual motion reference is requested. Discover its current video-generation tool and arguments from the server. Record the request, settings, returned video, and SHA-256 in the active run. For animation authoring and timestamped review, hand off to `keyframe-generation`.
+- Use Pacific Gym's Python CLI for source inspection, run manifests, hash-verified staging, Blender derivative receipts, and Isaac Sim acceptance. Run Blender through `blender-derive` with an explicit script and declared inputs/outputs; do not substitute a general-purpose Blender MCP for this bounded transformation.
+- Use the Isaac Sim Python launcher (`python.sh` or its platform equivalent) through `target-preflight` and `isaac-run` for the actual GPU simulation and receipt. NVIDIA's Isaac Sim MCP is a documentation-search server, not a simulation runner. If the target host already has that MCP service configured, use it to look up Isaac APIs and examples; never use a docs search result as runtime or walking evidence.
+- Use local Ollama only for advisory visual comparison, with `hf.co/LiquidAI/LFM2.5-VL-3B-GGUF:Q4_K_M` and the recorded model digest. The plugin uses Ollama's local HTTP API; it does not bundle an Ollama MCP server.
+- Use the plugin's fixed-function RawTree trace adapter when a run trace is requested. Do not replace it with a broad RawTree MCP: that server exposes unrelated database and credential administration tools. Never transmit credentials or media bytes into traces.
 
 ## Start the user-requested long-running Goal
 
@@ -29,12 +37,12 @@ cd plugins/pacific-gym
 python3 -m pacific_gym inspect --spec fixtures/strokah-source.json --out .pacific-gym/inspect.json
 ```
 
-The inspection must distinguish the static visual asset from the unanimated mechanical rig reference. Do not infer shared bindings from names. Do not request or infer a premade gait asset: FLUX supplies visual gait direction before production motion authoring.
+The inspection must distinguish the static visual asset from the unanimated mechanical rig reference. Do not infer shared bindings from names. Do not request or infer a premade gait asset: FLUX supplies visual gait direction before production motion authoring. If a new gait visual is needed, use the bundled BFL MCP and pass its pinned result to `keyframe-generation` for sampling and animation review.
 
 ## Candidate feedback
 For the local static comparison pulse, use Liquid AI's official Ollama model `hf.co/LiquidAI/LFM2.5-VL-3B-GGUF:Q4_K_M`. Check its resolved digest against `proof/slice-06/proof.json` and run `sh scripts/accept-comparison-pulse.sh` from the repository root.
 
-For animation review, render Blender candidate PNGs at every sample timestamp in the pinned FLUX frame manifest. Publish each completed frame with `python3 -m pacific_gym publish-candidate-frame` using the exact frame ID and timestamp, then run `python3 -m pacific_gym judge-keyframes` with the reference manifest, candidate directory, and run-local result directory. The watcher waits until the full timestamp set is available before judging any frame, and holds a candidate when visible foreground reaches the right image edge. Fix framing and republish that frame before judging. The watcher also requires complete hash-verified pairs with matching IDs, timestamps, and dimensions. Its visual result is advisory; it does not prove gait or physics. The separate `PostToolUse` hook compares explicit `candidate-add` renders against pinned run frames. See the repository README for command examples.
+For visual animation authoring and timestamp-paired frame review, use the separate `keyframe-generation` skill. Those visual judgments are advisory and do not prove gait or physics.
 
 Record each candidate PNG after a render or candidate-producing batch:
 
