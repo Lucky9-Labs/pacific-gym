@@ -12,6 +12,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 from . import __version__
+from .env import load_dotenv
 from .trace import (TABLE, canonical, cleanup_verification_rows, export_and_verify,
                     known_secrets, redact, specimen, sql_for_run)
 
@@ -112,6 +113,7 @@ def inspect(spec_path: Path, out_path: Path, cache: Path) -> dict:
 
 
 def main() -> int:
+    load_dotenv()
     parser = argparse.ArgumentParser(prog="pacific-gym")
     sub = parser.add_subparsers(dest="command", required=True)
     command = sub.add_parser("inspect", help="Verify and inspect immutable GLB sources")
@@ -170,6 +172,14 @@ def main() -> int:
     blender_command.add_argument("--input", type=Path, action="append", required=True)
     blender_command.add_argument("--output", type=Path, action="append", required=True)
     blender_command.add_argument("--extra-arg", action="append", default=[])
+    generation = sub.add_parser("generate-video", help="Submit a fresh BFL image-to-video job into the active run")
+    generation.add_argument("--manifest", type=Path, required=True)
+    generation.add_argument("--request", type=Path, required=True)
+    generation.add_argument("--start-frame", type=Path, required=True)
+    keyframes = sub.add_parser("extract-keyframes", help="Extract timestamped whole frames into the active run")
+    keyframes.add_argument("--manifest", type=Path, required=True)
+    keyframes.add_argument("--video", type=Path, required=True)
+    keyframes.add_argument("--fps", type=int, default=2)
     isaac_command = sub.add_parser("isaac-run", help="Run an Isaac Sim scenario adapter and verify GPU walking receipts")
     isaac_command.add_argument("--manifest", type=Path, required=True)
     isaac_command.add_argument("--executable", required=True, help="Isaac Sim python.sh/kit Python executable")
@@ -271,6 +281,38 @@ def main() -> int:
         result = blender_derive(args.manifest, args.executable, args.script,
                                 args.input, args.output, args.extra_arg)
         print(json.dumps(result, indent=2))
+    elif args.command == "generate-video":
+        from .run import load
+        manifest = args.manifest.expanduser().resolve(strict=True)
+        run_data = load(manifest)
+        if run_data.get("state") != "active":
+            raise ValueError("Fresh video generation requires an active run")
+        run_dir = manifest.parent.resolve()
+        output_dir = run_dir / "generation" / "bfl-video"
+        runner = Path(__file__).resolve().parents[1] / "scripts" / "run-flux3-video.py"
+        completed = subprocess.run(
+            [os.environ.get("PYTHON", "python3"), str(runner), "--request", str(args.request.expanduser().resolve()),
+             "--start-frame", str(args.start_frame.expanduser().resolve()), "--out", str(output_dir)],
+            check=False,
+        )
+        if completed.returncode:
+            return completed.returncode
+        print(json.dumps({"output_directory": str(output_dir), "fresh_job_only": True}))
+    elif args.command == "extract-keyframes":
+        from .run import load
+        manifest = args.manifest.expanduser().resolve(strict=True)
+        run_data = load(manifest)
+        if run_data.get("state") != "active":
+            raise ValueError("Keyframe extraction requires an active run")
+        output_dir = manifest.parent.resolve() / "keyframes" / "reference"
+        runner = Path(__file__).resolve().parents[1] / "scripts" / "extract-keyframes.py"
+        completed = subprocess.run(
+            [os.environ.get("PYTHON", "python3"), str(runner), "--video", str(args.video.expanduser().resolve()),
+             "--out", str(output_dir), "--fps", str(args.fps)], check=False,
+        )
+        if completed.returncode:
+            return completed.returncode
+        print(json.dumps({"manifest": str(output_dir / "manifest.json"), "output_directory": str(output_dir)}))
     elif args.command == "isaac-run":
         from .integrations import isaac_run
         result = isaac_run(args.manifest, args.executable, args.script, args.usd,

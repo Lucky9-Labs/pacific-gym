@@ -1,6 +1,6 @@
 {
   "name": "pacific-gym",
-  "version": "0.1.0+codex.20260925215034",
+  "version": "0.1.0+codex.20260925220545",
   "description": "Generate and review motion keyframes, then prepare and verify an Isaac Sim robot candidate",
   "author": {
     "name": "Lucky9 Labs",
