@@ -1,0 +1,22 @@
+{
+  "boundary": "Background Blender subprocess plumbing, read-only staged input, input preservation, and output hashing only; this cube fixture is not the production mech asset.",
+  "cli_receipt_sha256": "e02697e6558335657d3d45c7f5a45e703f584018d2f6260a7e6b894b5c1b749f",
+  "input": {
+    "bytes": 39,
+    "role": "source_fixture",
+    "sha256": "08675e9b2438bb126a60253c88415ae3f22ff1c2ba6253d0b826aa45d06d8f3c",
+    "sha256_after": "08675e9b2438bb126a60253c88415ae3f22ff1c2ba6253d0b826aa45d06d8f3c",
+    "staged_sha256": "08675e9b2438bb126a60253c88415ae3f22ff1c2ba6253d0b826aa45d06d8f3c"
+  },
+  "output": {
+    "bytes": 86564,
+    "path": "proof/slice-07/blender-smoke.blend",
+    "sha256": "d600241a522180e1edae9e3c0da8e1dc5c4fdea662251025860becafe095b95b"
+  },
+  "run_id": "f44cc300-ed4d-4c44-afd6-e430bf449e9e",
+  "schema_version": 1,
+  "script_sha256": "b5c1400282a3d1d9c5c17ccfc83d44ad028275c362625a0e9e271f900b0a1a1e",
+  "status": "passed",
+  "tool": "Blender background CLI",
+  "tool_version": "Blender 5.2.1 LTS"
+}

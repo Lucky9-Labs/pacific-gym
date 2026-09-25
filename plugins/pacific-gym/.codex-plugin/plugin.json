@@ -1,6 +1,6 @@
 {
   "name": "pacific-gym",
-  "version": "0.1.0",
+  "version": "0.1.0+codex.20260925192613",
   "description": "Prove each step from generated GLB to an Isaac Sim robot candidate",
   "author": {
     "name": "Lucky9 Labs",
@@ -14,7 +14,12 @@
     "longDescription": "Inspect immutable 3D sources and collect proof for each step toward an Isaac Sim robot.",
     "developerName": "Lucky9 Labs",
     "category": "Development",
-    "capabilities": ["Interactive", "Write"],
-    "defaultPrompt": ["Inspect the Strokah source assets and show their rig structures."]
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Use Pacific Gym on this reference. If I ask you to keep going until GPU walking proof or a blocker, create a Goal and continue."
+    ]
   }
 }

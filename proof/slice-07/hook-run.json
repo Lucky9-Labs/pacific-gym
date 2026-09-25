@@ -1,0 +1,80 @@
+{
+  "acceptance": {
+    "stable_forward_walking_observed_on_gpu": false,
+    "usd_articulation_valid": false
+  },
+  "blocker": {
+    "evidence": "Fresh Codex CLI PostToolUse recorded a local Liquid comparison against pinned PNG SHA256 7caec20755ab4e9af1b1ea4f11aad4623c8fb9910156c994bcfca6dba8e9dba2; host is macOS ARM64 without Isaac Sim GPU runtime.",
+    "reason": "This smoke run has no supported Isaac Sim GPU host."
+  },
+  "boundary": "Local CLI hook behavior and visual feedback are verified. No supported remote GPU host or Isaac Sim walking run was available; this smoke run is blocked, not a completed asset.",
+  "candidate": {
+    "bytes": 488899,
+    "sha256": "7a5a2ae6a1204faee46a5b6113be46e80df609e99782c9bef8ea40c51b22e1ee"
+  },
+  "candidate_id": "3af47c83-66a8-454d-b439-dad04e7bf402",
+  "codex_cli_version": "0.157.0",
+  "comparison": {
+    "inputs": [
+      {
+        "path": "/Users/lucky/.codex/worktrees/423f/pacific-gym/proof/slice-06/reference.png",
+        "role": "reference",
+        "sha256": "7caec20755ab4e9af1b1ea4f11aad4623c8fb9910156c994bcfca6dba8e9dba2"
+      },
+      {
+        "path": "/Users/lucky/.codex/worktrees/423f/pacific-gym/proof/slice-06/candidate.png",
+        "role": "candidate",
+        "sha256": "7a5a2ae6a1204faee46a5b6113be46e80df609e99782c9bef8ea40c51b22e1ee"
+      }
+    ],
+    "model": {
+      "digest": "4e3daebe4fb42e458b26090e6b5e6b38d34ddd1ff9f0673565d83acb3a2c5682",
+      "tag": "hf.co/LiquidAI/LFM2.5-VL-3B-GGUF:Q4_K_M"
+    },
+    "ollama": {
+      "done_reason": "stop",
+      "version": "0.34.4"
+    },
+    "result": {
+      "confidence": "high",
+      "evidence": "Pose difference: Candidate render shows right leg bent at the knee while the reference shows it extended. Contact difference: Candidate render shows the orange foot object touching the ground, while the reference shows it floating above the surface.",
+      "limitation": "Cannot determine if the pose or contact errors are intentional animation or physical validity.",
+      "next_action": "Adjust the candidate render to bend the right leg and remove the orange foot object."
+    },
+    "visual_pair": {
+      "path": "proof/slice-07/installed-hook-comparison.png",
+      "sha256": "067618f3d26c6c7d91e124f0aabd372f12d718661da2b01a6ec3b37a02473272"
+    }
+  },
+  "inputs": [
+    {
+      "bytes": 492425,
+      "role": "reference",
+      "sha256": "7caec20755ab4e9af1b1ea4f11aad4623c8fb9910156c994bcfca6dba8e9dba2"
+    },
+    {
+      "bytes": 492425,
+      "role": "reference_frame",
+      "sha256": "7caec20755ab4e9af1b1ea4f11aad4623c8fb9910156c994bcfca6dba8e9dba2"
+    }
+  ],
+  "observed_hook_events": [
+    "SessionStart",
+    "PostToolUse",
+    "Stop"
+  ],
+  "plugin_version": "0.1.0+codex.20260925195929",
+  "latest_installed_plugin_version": "0.1.0+codex.20260925201018",
+  "final_guard_smoke": {
+    "plugin_version": "0.1.0+codex.20260925200618",
+    "run_id": "93dc4236-5777-45c5-9837-ac2cd7c8e306",
+    "run_complete_rejected_without_proof": true,
+    "evidence_backed_blocker_recorded": true,
+    "stop_hook_allowed_exit_after_blocker": true
+  },
+  "run_id": "df7f07c7-94f7-4b82-aad5-d221c18eacc2",
+  "run_state": "blocked",
+  "schema_version": 1,
+  "slice": "goal-workflow-and-hooks",
+  "verified_local": true
+}

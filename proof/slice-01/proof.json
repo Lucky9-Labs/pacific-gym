@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "slice": "plugin-source-intake",
-  "status": "local_checks_passed_runtime_install_pending",
+  "status": "local_runtime_passed",
   "acceptance_command": "sh scripts/accept-source-intake.sh",
   "report": "proof/slice-01/inspect.json",
   "report_sha256": "ca48ae748f575b88f1a6f746f85c2e2e1c4fbbd76190032a95072de9c84c39c8",
@@ -23,9 +23,22 @@
     "plugin creator validator",
     "hook script direct execution",
     "S3 versioned readback and SHA-256",
-    "distinct GLB structures"
+    "distinct GLB structures",
+    "Codex CLI local plugin install",
+    "installed isaac-ready skill invocation",
+    "trusted SessionStart hook runtime receipt"
   ],
+  "runtime": {
+    "surface": "Codex CLI 0.157.0",
+    "plugin_id": "pacific-gym@pacific-gym-local",
+    "plugin_version": "0.1.0+codex.20260925192613",
+    "skill_invocation_thread_id": "01a0da08-dbde-73f3-a5f0-a45c395a37ce",
+    "hook_probe_thread_id": "01a0da08-a2b2-79c0-b8a2-c03107f453df",
+    "hook_receipt": "proof/slice-01/hook-runtime.json",
+    "hook_trust": "trusted in Codex CLI /hooks",
+    "desktop_ui_verified": false
+  },
   "pending": [
-    "Codex desktop plugin installation and hook trust"
+    "Codex desktop plugin directory display and hook trust UI"
   ]
 }

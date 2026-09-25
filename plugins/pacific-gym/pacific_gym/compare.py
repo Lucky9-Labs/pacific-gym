@@ -8,7 +8,7 @@ import re
 from pathlib import Path
 from urllib.request import Request, urlopen
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 from .cli import sha256
 
@@ -120,4 +120,66 @@ def compare(reference: Path, candidate: Path, model: str, host: str, pair_out: P
         "raw_response": raw,
         "comparison": result,
         "ollama": {"version": get_json(f"{host}/api/version")["version"], "done_reason": response.get("done_reason")},
+    }
+
+
+def compare_general(reference: Path, candidate: Path, model: str, host: str,
+                    pair_out: Path) -> dict:
+    """Advisory image comparison; structural and walking gates remain separate."""
+    for path in (reference, candidate):
+        if not path.is_file() or path.suffix.lower() != ".png":
+            raise ValueError(f"Expected an existing PNG image: {path}")
+    host = host.rstrip("/")
+    tags = get_json(f"{host}/api/tags")
+    installed = next((item for item in tags["models"] if item["name"] == model), None)
+    if installed is None:
+        raise ValueError(f"Model is not installed locally: {model}")
+    info = post_json(f"{host}/api/show", {"model": model}, timeout=15)
+    if "vision" not in info.get("capabilities", []):
+        raise ValueError(f"Model has no vision capability: {model}")
+    canvas = Image.new("RGB", (1800, 970), "#18212a")
+    draw = ImageDraw.Draw(canvas)
+    for index, (label, path) in enumerate((("REFERENCE", reference), ("CANDIDATE", candidate))):
+        source = Image.open(path).convert("RGB")
+        source = ImageOps.contain(source, (880, 880))
+        left = index * 900 + (900 - source.width) // 2
+        canvas.paste(source, (left, 70 + (880 - source.height) // 2))
+        draw.text((index * 900 + 20, 20), label, fill="white")
+    encoded = io.BytesIO()
+    canvas.save(encoded, format="PNG")
+    pair = encoded.getvalue()
+    pair_out.parent.mkdir(parents=True, exist_ok=True)
+    pair_out.write_bytes(pair)
+    prompt = (
+        "The image shows a reference on the left and a candidate render on the right. "
+        "Compare visible geometry, silhouette, materials, pose, and contact only where the "
+        "views are comparable. Report specific observed differences and one next edit or "
+        "inspection action. Do not infer hidden geometry, animation, physical validity, or "
+        "Isaac Sim walking from these still images. Return only JSON with keys evidence, "
+        "confidence (high|medium|low), next_action, and limitation. Each value must be a "
+        "short string. If the views differ too much, request matched views."
+    )
+    response = post_json(f"{host}/api/chat", {
+        "model": model, "stream": False, "format": "json",
+        "options": {"temperature": 0, "num_predict": 350},
+        "messages": [{"role": "user", "content": prompt,
+                      "images": [base64.b64encode(pair).decode("ascii")]}],
+    })
+    feedback = json.loads(response["message"]["content"])
+    if set(feedback) != {"evidence", "confidence", "next_action", "limitation"}:
+        raise ValueError("Vision response has unexpected fields")
+    if feedback["confidence"] not in {"high", "medium", "low"}:
+        raise ValueError("Vision confidence is invalid")
+    if any(not isinstance(value, str) or not value.strip() or len(value) > 600
+           for value in feedback.values()):
+        raise ValueError("Vision response contains empty or oversized text")
+    return {
+        "schema_version": 1,
+        "model": {"tag": model, "digest": installed["digest"]},
+        "inputs": [{"role": role, "path": str(path), "sha256": sha256(path)}
+                   for role, path in (("reference", reference), ("candidate", candidate))],
+        "visual_pair": {"path": str(pair_out), "sha256": hashlib.sha256(pair).hexdigest()},
+        "comparison": feedback,
+        "ollama": {"version": get_json(f"{host}/api/version")["version"],
+                   "done_reason": response.get("done_reason")},
     }

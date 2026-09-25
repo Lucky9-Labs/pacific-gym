@@ -5,7 +5,7 @@
   "slices": [
     {
       "id": "01-plugin-source-intake",
-      "state": "local_checks_passed_runtime_install_pending",
+      "state": "local_runtime_passed",
       "proof": "proof/slice-01/proof.json",
       "acceptance_command": "sh scripts/accept-source-intake.sh"
     },
@@ -26,6 +26,12 @@
       "state": "local_fixture_passed",
       "proof": "proof/slice-06/proof.json",
       "acceptance_command": "sh scripts/accept-comparison-pulse.sh"
+    },
+    {
+      "id": "07-natural-language-goal-workflow-and-hooks",
+      "state": "local_runtime_verified_gpu_unverified",
+      "proof": "proof/slice-07/hook-run.json",
+      "acceptance_command": "PYTHONPATH=plugins/pacific-gym python3 -m unittest discover -s plugins/pacific-gym/tests -v"
     }
   ],
   "gpu_handoff": null
