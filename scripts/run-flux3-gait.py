@@ -70,6 +70,16 @@ def main():
     print("FLUX3_PREFLIGHT_PASS")
     if not args.live:
         return 0
+    archived_proof = root / "proof/slice-03/proof.json"
+    if archived_proof.exists():
+        proof = json.loads(archived_proof.read_text())
+        for candidate in (proof.get("bfl_request", {}), proof.get("heft_candidate", {})):
+            archived_video = root / candidate.get("video", "")
+            if (candidate.get("spec_sha256") == sha256(root / args.request)
+                    and archived_video.is_file()
+                    and sha256(archived_video) == candidate.get("video_sha256")):
+                print("FLUX3_ARCHIVED_VIDEO_READY", archived_video)
+                return 0
     key = (subprocess.run(["pbpaste"], capture_output=True, text=True, check=True).stdout.strip()
            if args.clipboard_key else os.getenv("BFL_API_KEY"))
     if not key:

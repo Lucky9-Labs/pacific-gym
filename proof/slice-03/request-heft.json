@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "endpoint": "https://api.bfl.ai/v1/flux-3-video",
+  "model": "FLUX 3 Video",
+  "mode": "i2v",
+  "start_frame": "proof/slice-03/renders/visual/three-quarter.png",
+  "settings": {
+    "duration": 6,
+    "resolution": "hd",
+    "aspect_ratio": "1:1",
+    "generate_audio": false,
+    "safety_tolerance": 2,
+    "draft": true,
+    "version": "latest"
+  },
+  "prompt": "One unbroken full-body shot of the exact white unarmored Strokah mech in the opening frame. It takes two slow, massive forward strides across the flat gray floor toward the camera. The camera is locked at waist height; both feet stay visible. Each stride has a clear sequence: the torso shifts over one firmly planted foot; the other heavy split-toe foot lifts completely off the floor, swings forward, and lands flat with a hard, deliberate impact; the hips and chest compress downward under weight, then recover as the planted foot stays fixed on the floor until push-off. Then repeat with the opposite leg. Its large shield-shaped chest shell, round shoulder and knee joints, long articulated hands, and two-pronged feet stay the same shape and scale. Give the machine inertia: a slight delayed arm swing and a visible body jolt after each impact. Strong contact shadows and no skating, hovering, rapid shuffling, camera motion, cuts, armor, weapons, extra limbs, redesign, text, or music."
+}

@@ -28,6 +28,25 @@ print('BLENDER_RENDERS_HASH_PASS')
 PY
 python3 scripts/build-flux3-proof-sheet.py
 python3 scripts/run-flux3-gait.py
+python3 - <<'PY'
+import hashlib
+import json
+from pathlib import Path
+
+proof = json.loads(Path('proof/slice-03/proof.json').read_text())
+request = proof['bfl_request']
+for path, expected in (
+    (request['spec'], request['spec_sha256']),
+    (request['video'], request['video_sha256']),
+    (request['video_contact_sheet'], request['video_contact_sheet_sha256']),
+    (request['feet_contact_sheet'], request['feet_contact_sheet_sha256']),
+    (proof['heft_candidate']['spec'], proof['heft_candidate']['spec_sha256']),
+    (proof['heft_candidate']['video'], proof['heft_candidate']['video_sha256']),
+    (proof['heft_candidate']['contact_sheet'], proof['heft_candidate']['contact_sheet_sha256']),
+):
+    assert hashlib.sha256(Path(path).read_bytes()).hexdigest() == expected, path
+print('FLUX3_VIDEO_PROOF_HASH_PASS')
+PY
 
 if [ "${1:-}" = "--live" ]; then
   python3 scripts/run-flux3-gait.py --live
