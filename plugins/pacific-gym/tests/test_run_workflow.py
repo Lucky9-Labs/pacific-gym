@@ -77,6 +77,20 @@ class RunWorkflowTest(unittest.TestCase):
         with patch.dict(os.environ, {"NIMBLE_API_KEY": "environment-key"}):
             self.assertEqual(research.configured_key(self.workspace), "environment-key")
 
+    def test_reference_tags_require_a_domain_boundary_for_official_hosts(self):
+        import pacific_gym.nimble_research as research
+
+        refs = research.tag_references({"sources": [
+            {"title": "Artist guide", "url": "https://docs.blender.org/manual"},
+            {"title": "Artist guide", "url": "https://blender.org.attacker.example/manual"},
+            {"title": "Engineering guide", "url": "https://docs.nvidia.com/isaac"},
+            {"title": "Engineering guide", "url": "https://nvidia.com.attacker.example/isaac"},
+        ], "claims": []})
+        self.assertEqual(refs[0]["used_by"], "Blender authoring")
+        self.assertEqual(refs[1]["used_by"], "Review before use")
+        self.assertEqual(refs[2]["used_by"], "Isaac Sim handoff")
+        self.assertEqual(refs[3]["used_by"], "Review before use")
+
     def test_manifest_load_normalizes_a_symlink_alias_to_its_resolved_path(self):
         resolved_workspace = self.workspace.resolve()
         alias_root = resolved_workspace / "mount-alias"

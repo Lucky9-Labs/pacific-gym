@@ -230,6 +230,10 @@ def poll_run_research(manifest: Path, api_key: str) -> dict:
     return state
 
 
+def _host_matches_domain(host: str, domain: str) -> bool:
+    return host == domain or host.endswith("." + domain)
+
+
 def tag_references(trust: dict) -> list[dict]:
     """Apply stable editorial tags to Nimble's ordered, cited source list."""
     sources = trust.get("sources", [])
@@ -244,11 +248,12 @@ def tag_references(trust: dict) -> list[dict]:
             tags = ["similarity-lead", "inferred-identity", "excluded"]
             used_by = "Excluded from prompt"
             use = "Nimble inferred a character resemblance from a generic silhouette; this was not supplied as identity by the user."
-        elif "blender.org" in host or any(term in title for term in ("rigify", "inverse kinematics constraint")):
+        elif _host_matches_domain(host, "blender.org") or any(
+                term in title for term in ("rigify", "inverse kinematics constraint")):
             tags = ["blender", "rigging", "inverse-kinematics"]
             used_by = "Blender authoring"
             use = "Guide later rig controls and IK setup; these sources do not validate this asset's rig."
-        elif any(term in title for term in ("isaac sim", "robot", "joint", "degree of freedom", "humanoid usd", "kinematic")) or "nvidia.com" in host:
+        elif any(term in title for term in ("isaac sim", "robot", "joint", "degree of freedom", "humanoid usd", "kinematic")) or _host_matches_domain(host, "nvidia.com"):
             tags = ["isaac-sim", "robotics", "articulation"]
             used_by = "Isaac Sim handoff"
             use = "Inform later USD, articulation, or joint authoring. A source guide is not a runtime physics result."
