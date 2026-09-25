@@ -26,6 +26,19 @@ for role, source_sha in expected.items():
         assert hashlib.sha256(image.read_bytes()).hexdigest() == receipt['sha256']
 print('BLENDER_RENDERS_HASH_PASS')
 PY
+python3 - <<'PY'
+import hashlib
+import json
+from pathlib import Path
+
+directory = Path('proof/slice-03/renders/industrial')
+receipt = json.loads((directory / 'render.json').read_text())
+assert receipt['source_sha256'] == '65c6ef7de40c529c75c82dad8ab0f5ac13638882b1ef1eddee9a49a89ee42af1'
+assert set(receipt['views']) == {'walk-left'}
+image = directory / 'walk-left.png'
+assert hashlib.sha256(image.read_bytes()).hexdigest() == receipt['views']['walk-left']['sha256']
+print('INDUSTRIAL_START_FRAME_HASH_PASS')
+PY
 python3 scripts/build-flux3-proof-sheet.py
 python3 scripts/run-flux3-gait.py
 python3 - <<'PY'
@@ -43,8 +56,23 @@ for path, expected in (
     (proof['heft_candidate']['spec'], proof['heft_candidate']['spec_sha256']),
     (proof['heft_candidate']['video'], proof['heft_candidate']['video_sha256']),
     (proof['heft_candidate']['contact_sheet'], proof['heft_candidate']['contact_sheet_sha256']),
+    (proof['industrial_candidate']['spec'], proof['industrial_candidate']['spec_sha256']),
+    (proof['industrial_candidate']['start_frame'], proof['industrial_candidate']['start_frame_sha256']),
+    (proof['industrial_candidate']['video'], proof['industrial_candidate']['video_sha256']),
+    (proof['industrial_candidate']['contact_sheet'], proof['industrial_candidate']['contact_sheet_sha256']),
+    (proof['industrial_candidate']['feet_sheet'], proof['industrial_candidate']['feet_sheet_sha256']),
+    (proof['industrial_candidate']['full_frames_manifest'], proof['industrial_candidate']['full_frames_manifest_sha256']),
 ):
     assert hashlib.sha256(Path(path).read_bytes()).hexdigest() == expected, path
+manifest = json.loads(Path(proof['industrial_candidate']['full_frames_manifest']).read_text())
+assert manifest['source_video_sha256'] == proof['industrial_candidate']['video_sha256']
+assert manifest['crop'] is None and manifest['dimensions'] == [960, 960]
+assert len(manifest['frames']) == proof['industrial_candidate']['full_frame_count']
+frame_root = Path(proof['industrial_candidate']['full_frames_manifest']).parent
+for frame in manifest['frames']:
+    image = frame_root / frame['path']
+    assert hashlib.sha256(image.read_bytes()).hexdigest() == frame['sha256']
+    assert image.stat().st_size == frame['bytes']
 print('FLUX3_VIDEO_PROOF_HASH_PASS')
 PY
 

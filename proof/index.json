@@ -11,7 +11,7 @@
     },
     {
       "id": "03-flux3-video-gait-reference",
-      "state": "two_live_videos_reviewed_gait_not_accepted",
+      "state": "industrial_live_candidate_reviewed_gait_not_accepted",
       "proof": "proof/slice-03/proof.json",
       "acceptance_command": "sh scripts/accept-flux3-gait.sh"
     }

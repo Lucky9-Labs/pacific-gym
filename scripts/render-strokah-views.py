@@ -19,6 +19,7 @@ def sha256(path):
 
 args = sys.argv[sys.argv.index("--") + 1:]
 source, output = Path(args[0]).resolve(), Path(args[1]).resolve()
+walk_only = "--walk-only" in args[2:]
 output.mkdir(parents=True, exist_ok=True)
 before = sha256(source)
 
@@ -84,7 +85,7 @@ scene.camera = camera
 
 # Cardinal headings are names in GLB coordinates; selection of the walk start
 # view is made only after visual inspection of these renders.
-views = {
+views = {} if walk_only else {
     "negative-y": (0, -2.8, 1.0),
     "positive-y": (0, 2.8, 1.0),
     "negative-x": (-2.8, 0, 1.0),
@@ -99,6 +100,18 @@ for name, offset in views.items():
     scene.render.filepath = str(path)
     bpy.ops.render.render(write_still=True)
     files[name] = {"path": path.name, "sha256": sha256(path), "bytes": path.stat().st_size}
+
+if walk_only:
+    # Strokah faces -Y in this side view. Aim left of the model so the first
+    # frame has open runway in its direction of travel.
+    walk_aim = center + Vector((0, -size * 0.6, 0))
+    camera.location = walk_aim + Vector((2.8, 0, 1.0)) * size
+    camera.rotation_euler = (walk_aim - camera.location).to_track_quat("-Z", "Y").to_euler()
+    camera_data.ortho_scale = size * 2.0
+    walk_path = output / "walk-left.png"
+    scene.render.filepath = str(walk_path)
+    bpy.ops.render.render(write_still=True)
+    files["walk-left"] = {"path": walk_path.name, "sha256": sha256(walk_path), "bytes": walk_path.stat().st_size}
 
 if sha256(source) != before:
     raise RuntimeError("Source GLB bytes changed during rendering")

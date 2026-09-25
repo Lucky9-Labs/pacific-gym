@@ -1,0 +1,24 @@
+{
+  "source_sha256": "65c6ef7de40c529c75c82dad8ab0f5ac13638882b1ef1eddee9a49a89ee42af1",
+  "blender_version": "5.2.1 LTS",
+  "render_only_exclusions": [],
+  "bounding_box": {
+    "min": [
+      -0.42166993021965027,
+      -0.16397933661937714,
+      0.0010441163321956992
+    ],
+    "max": [
+      0.42166993021965027,
+      0.18547208607196808,
+      1.0000150203704834
+    ]
+  },
+  "views": {
+    "walk-left": {
+      "path": "walk-left.png",
+      "sha256": "a2afe229f53ac17d84e71cdaa1a7c7b4880cf553b951dc282af475ae86dc9fd8",
+      "bytes": 504600
+    }
+  }
+}

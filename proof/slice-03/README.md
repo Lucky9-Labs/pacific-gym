@@ -2,6 +2,30 @@
 
 ![Source contact sheet](source-contact-sheet.png)
 
+## Industrial side-on take
+
+[Watch the seven-second industrial MP4 with audio](strokah-flux3-industrial.mp4)
+
+![Industrial frame sequence](industrial-contact-sheet.png)
+
+The [full-frame manifest](industrial-full-frames/manifest.json) records 14
+uncropped 960 x 960 PNGs, sampled every half-second. These preserve the
+whole mech, pose, camera view, and floor context for later keyframe review.
+The foot crops below are diagnostic enlargements only; they are not the
+reference frames or BFL inputs.
+
+The [third exact prompt](request-industrial.json) uses a new side-on render
+with open runway on the left, asks for lateral travel and slow hydraulic
+steps, and requests native audio. BFL job
+`015e9481-a69d-484d-a951-6d2c8df7a18f` returned a real 7.04-second,
+960 x 960, 24 fps H.264/AAC MP4. It crosses the frame through several
+steps, with knee compression and dust on contact. This is much closer to an
+industrial jaunt than the earlier takes. The cadence still feels too quick
+and light for a colossal machine, and the apparent planted feet drift across
+successive frames. It is a visual direction, not a foot-contact reference.
+
+![Industrial foot crops](industrial-feet-sheet.png)
+
 ## Heft prompt draft
 
 [Watch the six-second heft MP4](strokah-flux3-heft.mp4)

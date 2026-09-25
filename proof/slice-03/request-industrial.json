@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "endpoint": "https://api.bfl.ai/v1/flux-3-video",
+  "model": "FLUX 3 Video",
+  "mode": "i2v",
+  "start_frame": "proof/slice-03/renders/industrial/walk-left.png",
+  "settings": {
+    "duration": 7,
+    "resolution": "hd",
+    "aspect_ratio": "1:1",
+    "generate_audio": true,
+    "safety_tolerance": 2,
+    "draft": false,
+    "version": "latest"
+  },
+  "prompt": "A single locked, low side-profile shot of the exact matte-white Strokah mech in the opening frame. It travels from screen right to screen left across the concrete hangar floor, covering roughly one body width in seven seconds. Keep its full body and both split-toe feet in frame. Move like a colossal industrial machine with a slow, confident, heavy jaunt: the pelvis loads over the support leg; the trailing foot peels off the ground, swings forward in a long deliberate arc, and lands with a deep metallic impact. The planted foot stays fixed to the floor while the torso passes over it. Repeat with the other leg for a second distinct stride. At each landing the knee compresses, the huge shield-shaped chest dips, the shoulders and long hands follow with delayed inertia, and a small dust puff and floor tremor show the weight. Its original chest shell, round shoulder and knee joints, articulated hands, and two-pronged feet retain the same shape and scale. Camera remains side-on and still; the mech advances left rather than turning toward camera or walking in place. Deep hydraulic thuds and piston hiss, no music, no weapons, no armor changes, no extra limbs, no cuts."
+}

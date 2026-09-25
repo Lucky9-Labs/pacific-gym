@@ -73,7 +73,7 @@ def main():
     archived_proof = root / "proof/slice-03/proof.json"
     if archived_proof.exists():
         proof = json.loads(archived_proof.read_text())
-        for candidate in (proof.get("bfl_request", {}), proof.get("heft_candidate", {})):
+        for candidate in (proof.get("bfl_request", {}), proof.get("heft_candidate", {}), proof.get("industrial_candidate", {})):
             archived_video = root / candidate.get("video", "")
             if (candidate.get("spec_sha256") == sha256(root / args.request)
                     and archived_video.is_file()
