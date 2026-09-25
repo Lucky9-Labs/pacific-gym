@@ -1,0 +1,22 @@
+{
+  "acceptance_command": "sh scripts/accept-rawtree-trace.sh",
+  "data_boundary": "Local redaction and serialization only; nothing was transmitted to RawTree.",
+  "evidence_source": "representative replay of proof/slice-01/inspect.json",
+  "insert_request_id": null,
+  "local_checks": [
+    "complete representative trace",
+    "recursive credential redaction",
+    "canonical JSON serialization",
+    "strict query response comparison"
+  ],
+  "query": "SELECT run_id, trace_json, trace_sha256 FROM pacific_gym_development_traces WHERE run_id = '185738d9-46dd-4d46-941f-b987c13b0e71' LIMIT 2",
+  "query_request_id": null,
+  "returned_row": null,
+  "row_count": 0,
+  "run_id": "185738d9-46dd-4d46-941f-b987c13b0e71",
+  "schema_version": 1,
+  "slice": "rawtree-traces",
+  "status": "blocked_missing_rawtree_api_key",
+  "table": "pacific_gym_development_traces",
+  "trace_sha256": "da25561d4d06e47d026f78adf2e5c7028133bc2667177136c047a50ed657def2"
+}

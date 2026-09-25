@@ -7,10 +7,12 @@ import os
 import struct
 import subprocess
 import tempfile
+import uuid
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 from . import __version__
+from .trace import TABLE, canonical, export_and_verify, known_secrets, redact, specimen, sql_for_run
 
 
 def sha256(path: Path) -> str:
@@ -115,7 +117,39 @@ def main() -> int:
     command.add_argument("--spec", type=Path, required=True)
     command.add_argument("--out", type=Path, required=True)
     command.add_argument("--cache", type=Path, default=Path(".pacific-gym/cache"))
+    trace_command = sub.add_parser("trace", help="Export a redacted development trace and verify RawTree read-back")
+    trace_command.add_argument("--repo-root", type=Path, required=True)
+    trace_command.add_argument("--out", type=Path, required=True)
+    trace_command.add_argument("--api-key-file", type=Path)
+    trace_command.add_argument("--database")
     args = parser.parse_args()
     if args.command == "inspect":
         print(json.dumps(inspect(args.spec, args.out, args.cache), indent=2))
+    elif args.command == "trace":
+        trace = specimen(args.repo_root, str(uuid.uuid4()))
+        safe = redact(trace, known_secrets())
+        key = args.api_key_file.read_text().strip() if args.api_key_file else os.environ.get("RAWTREE_API_KEY", "")
+        if key:
+            result = export_and_verify(trace, key, database=args.database)
+        else:
+            result = {
+                "status": "blocked_missing_rawtree_api_key", "run_id": safe["run_id"],
+                "table": TABLE, "insert_request_id": None,
+                "query_request_id": None, "query": sql_for_run(safe["run_id"]), "returned_row": None,
+                "trace_sha256": hashlib.sha256(canonical(safe).encode()).hexdigest(),
+                "row_count": 0,
+                "local_checks": ["complete representative trace", "recursive credential redaction",
+                                 "canonical JSON serialization", "strict query response comparison"],
+                "data_boundary": "Local redaction and serialization only; nothing was transmitted to RawTree.",
+            }
+        result.update({
+            "schema_version": 1,
+            "slice": "rawtree-traces",
+            "acceptance_command": "sh scripts/accept-rawtree-trace.sh",
+            "evidence_source": "representative replay of proof/slice-01/inspect.json",
+        })
+        args.out.parent.mkdir(parents=True, exist_ok=True)
+        args.out.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
+        print(result["status"] + " run_id=" + result["run_id"])
+        return 0 if result["status"] == "live_round_trip_passed" else 2
     return 0

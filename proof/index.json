@@ -8,6 +8,12 @@
       "state": "local_checks_passed_runtime_install_pending",
       "proof": "proof/slice-01/proof.json",
       "acceptance_command": "sh scripts/accept-source-intake.sh"
+    },
+    {
+      "id": "02-rawtree-traces",
+      "state": "local_checks_passed_live_export_blocked_missing_api_key",
+      "proof": "proof/slice-02/proof.json",
+      "acceptance_command": "sh scripts/accept-rawtree-trace.sh"
     }
   ],
   "gpu_handoff": null
