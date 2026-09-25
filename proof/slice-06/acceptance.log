@@ -1,0 +1,6 @@
+{
+  "evidence": "REFERENCE orange foot horizontal center = 572.4px, CANDIDATE orange foot horizontal center = 357.5px",
+  "confidence": "high",
+  "next_action": "MOVE THE LEFT FOOT CONTACT FORWARD"
+}
+COMPARISON_PULSE_PASS

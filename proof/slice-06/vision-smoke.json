@@ -1,0 +1,8 @@
+{
+  "model": "hf.co/LiquidAI/LFM2.5-VL-3B-GGUF:Q4_K_M",
+  "image": "proof/slice-06/candidate.png",
+  "image_sha256": "7a5a2ae6a1204faee46a5b6113be46e80df609e99782c9bef8ea40c51b22e1ee",
+  "prompt": "In this image, what color is the foot to the LEFT of the blue foot? Answer with the color only.",
+  "raw_response": "Orange",
+  "done_reason": "stop"
+}

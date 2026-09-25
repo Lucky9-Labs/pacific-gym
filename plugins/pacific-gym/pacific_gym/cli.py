@@ -117,6 +117,13 @@ def main() -> int:
     command.add_argument("--spec", type=Path, required=True)
     command.add_argument("--out", type=Path, required=True)
     command.add_argument("--cache", type=Path, default=Path(".pacific-gym/cache"))
+    comparison = sub.add_parser("compare", help="Compare a pinned reference PNG with a candidate PNG using Ollama vision")
+    comparison.add_argument("--reference", type=Path, required=True)
+    comparison.add_argument("--candidate", type=Path, required=True)
+    comparison.add_argument("--out", type=Path, required=True)
+    comparison.add_argument("--pair-out", type=Path)
+    comparison.add_argument("--model", default="hf.co/LiquidAI/LFM2.5-VL-3B-GGUF:Q4_K_M")
+    comparison.add_argument("--host", default="http://127.0.0.1:11434")
     trace_command = sub.add_parser("trace", help="Export a redacted development trace and verify RawTree read-back")
     trace_command.add_argument("--repo-root", type=Path, required=True)
     trace_command.add_argument("--out", type=Path, required=True)
@@ -125,6 +132,12 @@ def main() -> int:
     args = parser.parse_args()
     if args.command == "inspect":
         print(json.dumps(inspect(args.spec, args.out, args.cache), indent=2))
+    elif args.command == "compare":
+        from .compare import compare
+        result = compare(args.reference, args.candidate, args.model, args.host, args.pair_out)
+        args.out.parent.mkdir(parents=True, exist_ok=True)
+        args.out.write_text(json.dumps(result, indent=2) + "\n")
+        print(json.dumps(result["comparison"], indent=2))
     elif args.command == "trace":
         trace = specimen(args.repo_root, str(uuid.uuid4()))
         safe = redact(trace, known_secrets())

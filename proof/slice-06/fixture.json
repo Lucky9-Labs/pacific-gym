@@ -1,0 +1,12 @@
+{
+  "fixture": "synthetic static contact pose",
+  "forward_axis": "+X",
+  "reference_left_foot_x": 0.55,
+  "candidate_left_foot_x": -0.55,
+  "right_foot_x": -0.25,
+  "expected_steering": "move the left foot contact forward",
+  "render_size": [
+    900,
+    620
+  ]
+}
