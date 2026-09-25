@@ -129,6 +129,21 @@ def main() -> int:
     trace_command.add_argument("--out", type=Path, required=True)
     trace_command.add_argument("--api-key-file", type=Path)
     trace_command.add_argument("--database")
+    start_command = sub.add_parser("run-start", help="Start one asset run in this workspace")
+    start_command.add_argument("--workspace", type=Path, default=Path.cwd())
+    start_command.add_argument("--reference", type=Path, required=True)
+    start_command.add_argument("--source", type=Path)
+    start_command.add_argument("--rig", type=Path)
+    start_command.add_argument("--style", default="")
+    status_command = sub.add_parser("run-status", help="Show the active run and acceptance state")
+    status_command.add_argument("--workspace", type=Path, default=Path.cwd())
+    candidate_command = sub.add_parser("candidate-add", help="Record a rendered PNG for hook comparison")
+    candidate_command.add_argument("--manifest", type=Path, required=True)
+    candidate_command.add_argument("--image", type=Path, required=True)
+    candidate_command.add_argument("--stage", required=True)
+    blocker_command = sub.add_parser("run-block", help="Record a specific blocker and stop this run")
+    blocker_command.add_argument("--manifest", type=Path, required=True)
+    blocker_command.add_argument("--reason", required=True)
     args = parser.parse_args()
     if args.command == "inspect":
         print(json.dumps(inspect(args.spec, args.out, args.cache), indent=2))
@@ -165,4 +180,22 @@ def main() -> int:
         args.out.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
         print(result["status"] + " run_id=" + result["run_id"])
         return 0 if result["status"] == "live_round_trip_passed" else 2
+    elif args.command == "run-start":
+        from .run import goal_text, start
+        result = start(args.workspace, args.reference, args.source, args.rig, args.style)
+        print(json.dumps({"run_id": result["run_id"], "manifest": result["manifest"],
+                          "goal": goal_text(result)}, indent=2))
+    elif args.command == "run-status":
+        from .run import active_manifest, load
+        path = active_manifest(args.workspace)
+        print(json.dumps(load(path) if path else {"state": "no_active_run"}, indent=2))
+    elif args.command == "candidate-add":
+        from .run import add_candidate
+        result = add_candidate(args.manifest, args.image, args.stage)
+        print("PACIFIC_GYM_CANDIDATE=" + result["id"])
+    elif args.command == "run-block":
+        from .run import set_blocker
+        result = set_blocker(args.manifest, args.reason)
+        print(json.dumps({"run_id": result["run_id"], "state": result["state"],
+                          "blocker": result["blocker"]}))
     return 0
