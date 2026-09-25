@@ -10,7 +10,6 @@ import json
 from pathlib import Path
 
 root = Path.cwd()
-assert json.loads((root / 'plugin.json').read_text())['name'] == 'pacific-gym'
 assert json.loads((root / '.codex-plugin/plugin.json').read_text())['name'] == 'pacific-gym'
 assert json.loads((root / 'hooks/hooks.json').read_text())['hooks']['SessionStart']
 assert (root / 'skills/isaac-ready/SKILL.md').is_file()

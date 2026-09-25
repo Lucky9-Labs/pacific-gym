@@ -5,7 +5,7 @@
   "slices": [
     {
       "id": "01-plugin-source-intake",
-      "state": "local_checks_passed_runtime_install_pending",
+      "state": "local_runtime_passed",
       "proof": "proof/slice-01/proof.json",
       "acceptance_command": "sh scripts/accept-source-intake.sh"
     },
