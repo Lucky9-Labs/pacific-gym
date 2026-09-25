@@ -23,11 +23,17 @@ With an authorized BFL API key in `BFL_API_KEY`, run
 `sh scripts/accept-flux3-gait.sh --live` to submit once, poll or resume that
 job, and save the returned MP4 under `.pacific-gym/flux3/`. The submission ID
 is stored so rerunning the command does not create another billable job.
+On macOS, immediately after copying the key, run
+`sh scripts/accept-flux3-gait.sh --live-from-clipboard` to use it without
+placing the key in a shell command or environment variable.
 
-The local preflight passed on 2026-09-25. The live command exited 3 before
-submission because `BFL_API_KEY` was unavailable. No video was produced;
-identity preservation and foot contacts in generated motion remain untested.
-The sheet above is source render proof only.
+The local preflight passed on 2026-09-25. After the key was copied to the
+clipboard, BFL accepted one draft submission. The client then rejected BFL's
+returned polling host before it saved the job ID, so that result cannot be
+retrieved. The client now saves the submission before validating that the
+polling URL is HTTPS. The clipboard key cleared before a replacement run.
+No video was downloaded; identity preservation and foot contacts in generated
+motion remain untested. The sheet above is source render proof only.
 
 API contract: [BFL Video docs](https://docs.bfl.ai/flux_3/flux3_video),
 [FLUX 3 endpoint](https://docs.bfl.ai/api-reference/utility/generate-a-video-with-flux-3).

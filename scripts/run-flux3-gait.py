@@ -5,6 +5,7 @@ import base64
 import hashlib
 import json
 import os
+import subprocess
 import sys
 import time
 import urllib.error
@@ -45,6 +46,7 @@ def main():
     parser.add_argument("--request", type=Path, default=Path("proof/slice-03/request.json"))
     parser.add_argument("--out", type=Path, default=Path(".pacific-gym/flux3"))
     parser.add_argument("--live", action="store_true")
+    parser.add_argument("--clipboard-key", action="store_true", help="Read BFL key from macOS clipboard without logging it")
     args = parser.parse_args()
     root = Path(__file__).resolve().parent.parent
     spec = json.loads((root / args.request).read_text())
@@ -68,7 +70,8 @@ def main():
     print("FLUX3_PREFLIGHT_PASS")
     if not args.live:
         return 0
-    key = os.getenv("BFL_API_KEY")
+    key = (subprocess.run(["pbpaste"], capture_output=True, text=True, check=True).stdout.strip()
+           if args.clipboard_key else os.getenv("BFL_API_KEY"))
     if not key:
         print("BFL_API_KEY_UNAVAILABLE", file=sys.stderr)
         return 3

@@ -31,6 +31,8 @@ python3 scripts/run-flux3-gait.py
 
 if [ "${1:-}" = "--live" ]; then
   python3 scripts/run-flux3-gait.py --live
+elif [ "${1:-}" = "--live-from-clipboard" ]; then
+  python3 scripts/run-flux3-gait.py --live --clipboard-key
 else
   echo FLUX3_LOCAL_PREFLIGHT_PASS
 fi

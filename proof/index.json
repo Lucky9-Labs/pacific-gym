@@ -11,7 +11,7 @@
     },
     {
       "id": "03-flux3-video-gait-reference",
-      "state": "local_preflight_passed_live_blocked_missing_bfl_api_key",
+      "state": "bfl_request_accepted_result_unavailable_retry_waiting_for_key",
       "proof": "proof/slice-03/proof.json",
       "acceptance_command": "sh scripts/accept-flux3-gait.sh"
     }

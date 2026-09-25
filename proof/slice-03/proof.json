@@ -1,12 +1,13 @@
 {
   "schema_version": 1,
   "slice": "03-flux3-video-gait-reference",
-  "state": "local_preflight_passed_live_blocked_missing_bfl_api_key",
+  "state": "bfl_request_accepted_result_unavailable_retry_waiting_for_key",
   "acceptance_command": "sh scripts/accept-flux3-gait.sh",
   "live_command": "sh scripts/accept-flux3-gait.sh --live",
+  "clipboard_live_command": "sh scripts/accept-flux3-gait.sh --live-from-clipboard",
   "local_acceptance_exit_code": 0,
-  "live_attempt_exit_code": 3,
-  "blocker": "BFL_API_KEY is unset in the task environment; targeted macOS Keychain service checks for BFL_API_KEY, bfl.ai, api.bfl.ai, and Black Forest Labs found no entry.",
+  "live_attempt_exit_code": 1,
+  "blocker": "The first BFL submission returned an id and polling_url, but the client rejected the polling host before saving either value. The clipboard key then cleared before a replacement run. A new key copy is needed to complete the video test.",
   "source_assets": {
     "visual_lod0_sha256": "65c6ef7de40c529c75c82dad8ab0f5ac13638882b1ef1eddee9a49a89ee42af1",
     "rig_reference_sha256": "4f8bdb1d15ed6d164f1d8fa2aca63c11884f7019ed892f2862c61d5245135506",
@@ -38,7 +39,9 @@
     "aspect_ratio": "1:1",
     "draft": true,
     "generate_audio": false,
-    "submitted": false,
+    "submitted": true,
+    "first_submission": "BFL accepted one draft request; job id and cost were not retained because client validation failed before persistence. No video was downloaded.",
+    "replacement_submitted": false,
     "video": null
   },
   "review": {
@@ -50,6 +53,7 @@
   "logs": [
     "proof/slice-03/acceptance.log",
     "proof/slice-03/live-attempt.log",
+    "proof/slice-03/first-submit-failure.log",
     "proof/slice-03/blender-visual.log",
     "proof/slice-03/blender-rig.log"
   ]
