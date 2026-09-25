@@ -8,4 +8,4 @@ The current Strokah source packet is a reference handoff, not a validated physic
 
 The first local acceptance command is `sh scripts/accept-source-intake.sh`. The repo-local plugin is in `plugins/pacific-gym` and its marketplace entry is in `.agents/plugins/marketplace.json`. Codex must trust a plugin hook before that hook executes in a session.
 
-The controlled Liquid vision comparison pulse is documented in [proof/slice-06/README.md](proof/slice-06/README.md). Its local acceptance command is `sh scripts/accept-comparison-pulse.sh`.
+The controlled Liquid vision comparison pulse uses Liquid AI's official `hf.co/LiquidAI/LFM2.5-VL-3B-GGUF:Q4_K_M` model in local Ollama. Its exact tested digest, setup, and visual proof are in [proof/slice-06/README.md](proof/slice-06/README.md). Run it with `sh scripts/accept-comparison-pulse.sh`. This is a manual command; the plugin does not yet register a comparison hook or auto-steer Codex.
