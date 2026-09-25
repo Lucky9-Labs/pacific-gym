@@ -134,13 +134,33 @@ def ready_candidate(ref: dict, candidate_dir: Path) -> dict | None:
         with Image.open(image_path) as image:
             image.verify()
         with Image.open(image_path) as image:
-            if image.size != ref["dimensions"]:
+            if image.size != ref["dimensions"] or _right_edge_clipped(image):
                 return None
     except Exception:
         return None
     return {"path": image_path, "sha256": sidecar["sha256"],
             "test_fixture": bool(sidecar.get("test_fixture", False)),
             "fixture_note": sidecar.get("fixture_note")}
+
+
+def _right_edge_clipped(image: Image.Image) -> bool:
+    """Reject a render with foreground pixels pressed against the right edge."""
+    rgb = image.convert("RGB")
+    width, height = rgb.size
+    if width < 3 or height < 3:
+        return False
+    pixels = rgb.load()
+    corners = [pixels[0, 0], pixels[width - 1, 0],
+               pixels[0, height - 1], pixels[width - 1, height - 1]]
+    background = tuple(sorted(c[channel] for c in corners)[len(corners) // 2]
+                       for channel in range(3))
+    # Ignore the bottom edge, which commonly contains the ground plane. A
+    # non-background run on the rightmost two columns indicates a clipped subject.
+    for y in range(1, height - 1):
+        for x in (width - 1, width - 2):
+            if sum(abs(pixels[x, y][channel] - background[channel]) for channel in range(3)) > 48:
+                return True
+    return False
 
 
 def verify_model(model: str, host: str) -> dict:
@@ -253,26 +273,33 @@ def run_judge(reference_manifest: Path, candidate_dir: Path, out_dir: Path, mode
     while True:
         previous = {ref["frame_id"]: _existing_judgment(out_dir / f"{ref['frame_id']}.json", ref)
                     for ref in refs}
-        for ref in refs:
-            candidate = ready_candidate(ref, candidate_dir)
-            old_judgment = previous[ref["frame_id"]]
-            if old_judgment is not None:
-                if candidate is not None and old_judgment["pair"]["synthetic_candidate"].get("sha256") != candidate["sha256"]:
-                    raise ValueError(f"Existing judgment conflicts with current pair {ref['frame_id']}; use a fresh output directory")
-                continue
-            if candidate is None:
-                continue
-            result = judge_pair(ref, candidate, out_dir, model, host, model_info)
-            emitted += 1
-            if not once:
-                print(json.dumps({"judge_ready": result["frame_id"],
-                                  "timestamp_seconds": result["timestamp_seconds"],
-                                  "status": result["status"], "judge": result["judge"],
-                                  "result_path": str(out_dir / f"{result['frame_id']}.json")}), flush=True)
+        candidates = {ref["frame_id"]: ready_candidate(ref, candidate_dir) for ref in refs}
+        # Treat one animation review as a synchronized batch. Do not let an
+        # early frame become a standalone judgment while later timestamps are
+        # still rendering or awaiting framing repair.
+        batch_ready = all(previous[ref["frame_id"]] is not None or
+                          candidates[ref["frame_id"]] is not None for ref in refs)
+        if batch_ready:
+            for ref in refs:
+                candidate = candidates[ref["frame_id"]]
+                old_judgment = previous[ref["frame_id"]]
+                if old_judgment is not None:
+                    if candidate is not None and old_judgment["pair"]["synthetic_candidate"].get("sha256") != candidate["sha256"]:
+                        raise ValueError(f"Existing judgment conflicts with current pair {ref['frame_id']}; use a fresh output directory")
+                    continue
+                result = judge_pair(ref, candidate, out_dir, model, host, model_info)
+                emitted += 1
+                if not once:
+                    print(json.dumps({"judge_ready": result["frame_id"],
+                                      "timestamp_seconds": result["timestamp_seconds"],
+                                      "status": result["status"], "judge": result["judge"],
+                                      "result_path": str(out_dir / f"{result['frame_id']}.json")}), flush=True)
         already = sum((out_dir / f"{ref['frame_id']}.json").is_file() for ref in refs)
         state = {"status": "scan_complete" if once else "watching", "judge_results_emitted": emitted,
                  "completed_pair_judgments": already,
-                 "pairs_waiting": len(refs) - already, "result_directory": str(out_dir)}
+                 "pairs_waiting": len(refs) - already,
+                 "batch_ready": batch_ready,
+                 "result_directory": str(out_dir)}
         if once:
             return state
         time.sleep(poll_seconds)
