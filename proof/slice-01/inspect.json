@@ -1,0 +1,44 @@
+{
+  "asset_id": "strokah",
+  "assets": [
+    {
+      "bytes": 2742264,
+      "role": "visual_lod0",
+      "sha256": "65c6ef7de40c529c75c82dad8ab0f5ac13638882b1ef1eddee9a49a89ee42af1",
+      "structure": {
+        "animations": [],
+        "mesh_nodes": 79,
+        "meshes": 79,
+        "nodes": 80,
+        "rigid_parented_mesh_nodes": 79,
+        "skinned_mesh_nodes": 0,
+        "skins": [],
+        "weighted_primitives": 0
+      },
+      "uri": "s3://mech-art-library-20260905225047699700000001/models/mechs/strokah-skeleton/isaacsim-source/v1/strokah-gameplay-lod0.glb?versionId=Bqdb5ye7bhjfF5p9GfliwOhpEpeTgCZL"
+    },
+    {
+      "bytes": 6746020,
+      "role": "rig_reference",
+      "sha256": "4f8bdb1d15ed6d164f1d8fa2aca63c11884f7019ed892f2862c61d5245135506",
+      "structure": {
+        "animations": [],
+        "mesh_nodes": 90,
+        "meshes": 90,
+        "nodes": 174,
+        "rigid_parented_mesh_nodes": 90,
+        "skinned_mesh_nodes": 0,
+        "skins": [
+          {
+            "joints": 62,
+            "name": "Strokah_MechanicalRig"
+          }
+        ],
+        "weighted_primitives": 0
+      },
+      "uri": "s3://mech-art-library-20260905225047699700000001/models/mechs/strokah-skeleton/isaacsim-source/v1/strokah-mech-static-rig.glb?versionId=ogQqgs1P9Hs8QZCxLHXGelUlp7kbDqad"
+    }
+  ],
+  "schema_version": 1,
+  "tool_version": "0.1.0"
+}
