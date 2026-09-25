@@ -1,9 +1,17 @@
-# RawTree trace acceptance
+# RawTree trace integration
 
-Proof question: does a redacted Pacific Gym development trace survive an insert and a run-ID query with every serialized field unchanged?
+## Row contract
 
-`sh scripts/accept-rawtree-trace.sh` builds a representative replay from the real slice 1 inspection report, runs local tests, inserts one row with RawTree's [table API](https://rawtree.com/blog/introducing-rawtree), then uses its [SQL query API](https://rawtree.com/blog/introducing-rawtree) to retrieve that row. The canonical `trace_json` and SHA-256 must match exactly. The query is bounded to two rows so a duplicate run ID fails acceptance.
+`luckybucky_hackathon` is the RawTree table for Pacific Gym agent traces. RawTree rejects `luckybucky-hackathon`: its table API requires `^[a-zA-Z][a-zA-Z0-9_]{0,63}$`, so the project uses the underscore spelling. Each event row contains `run_id`, `codex_session_id`, `codex_thread_id`, `event_id`, `sequence`, `timestamp`, `event_type`, `agent_output`, `tool_name`, `tool_input`, `tool_result`, `status`, `goal`, and `artifact_refs`, plus capture provenance and a row hash.
 
-The replay includes a prompt, tool input, tool output, decision, capture timing, source/report hashes, and artifact URIs. The original inspection duration was not recorded and is explicitly `null`. Original source media bytes never enter the RawTree payload. Credential-like fields, bearer tokens, known environment secret values, and token query parameters are redacted before transmission.
+`tool_input` and `tool_result` are canonical JSON strings. A live read-back showed that RawTree flattens nested objects into dotted column names, which prevents the original object from round-tripping as one field. Null-valued fields can also be omitted, so unknown durations are stored as the string `unknown`. Artifact references remain a small list of URI/hash objects; media bytes stay outside RawTree.
 
-The checked-in `proof.json` records a live round trip. It includes the insert and query request IDs, the exact SQL, bounded query attempts, both request durations, the returned row, and the matching trace digest. A development run showed that an immediate query can return zero rows after a confirmed insert, so acceptance retries briefly; the recorded run found its row on the first query. The key's cluster scope was not independently identified by the API response. Local `main` keeps its key in an ignored private file with `.env` symlinked to it; no key is committed.
+Agent output and rationale are retained as evidence. The exporter does not assign good/bad or alignment verdicts; Liquid's SQL analysis owns those judgments. Credentials are recursively redacted before insertion.
+
+## Live verification and cleanup boundary
+
+On 2026-09-25, the RawTree API rejected the hyphenated table name with a validation error. The underscore table was then created by ingesting four representative event rows. The first read-back exposed nested-object flattening, so exact verification failed for run `de74d610-35bd-4bfb-9836-341a952b5e71`. A subsequent read-only count found four rows total across one run; those rows are from that verification.
+
+The attempted row cleanup was rejected because `/v1/query` allows read queries only. RawTree's documented table management operation deletes the entire table, and was not used. The four verification rows therefore remain in `luckybucky_hackathon`; no unrelated rows were found. Do not claim the post-verification reset or a successful round-trip for the revised JSON-string row contract until a supported row-level deletion path and a fresh read-back are available.
+
+The local acceptance command records cleanup as unavailable and exits with status 2 after a successful round-trip, rather than sending unsupported mutation SQL or dropping the table. Its current fixture is a representative replay, not a capture of the original inspection timing.
