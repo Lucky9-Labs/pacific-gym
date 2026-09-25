@@ -74,6 +74,20 @@ for frame in manifest['frames']:
     assert hashlib.sha256(image.read_bytes()).hexdigest() == frame['sha256']
     assert image.stat().st_size == frame['bytes']
 print('FLUX3_VIDEO_PROOF_HASH_PASS')
+
+publication = json.loads(Path(proof['s3_publication']['receipt']).read_text())
+handoff = json.loads(Path(proof['s3_publication']['manifest']).read_text())
+assert publication['status'] == 'published_and_readback_verified_visual_candidate'
+assert publication['candidate_only'] is True
+for role, path in (('video', Path(proof['industrial_candidate']['video'])),
+                   ('manifest', Path(proof['s3_publication']['manifest']))):
+    item = publication[role]
+    assert item['version_id'] and item['sha256'] == item['readback_sha256']
+    assert hashlib.sha256(path.read_bytes()).hexdigest() == item['sha256']
+    assert path.stat().st_size == item['bytes']
+assert handoff['video']['sha256'] == publication['video']['sha256']
+assert handoff['status'] == 'visual_candidate_not_accepted_for_foot_contacts_or_physics'
+print('S3_CANDIDATE_RECEIPT_HASH_PASS')
 PY
 
 if [ "${1:-}" = "--live" ]; then

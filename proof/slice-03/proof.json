@@ -22,7 +22,10 @@
     "rig_receipt": "proof/slice-03/renders/rig/render.json",
     "industrial_start_receipt": "proof/slice-03/renders/industrial/render.json",
     "views_per_source": 5,
-    "rig_render_only_exclusions": ["Icosphere", "Terrain_Walk_Test"],
+    "rig_render_only_exclusions": [
+      "Icosphere",
+      "Terrain_Walk_Test"
+    ],
     "start_frame": "proof/slice-03/renders/visual/three-quarter.png",
     "start_frame_sha256": "6a3b6b41ccda66838aa249480d3cf47049c54e742bb912fa5d70e7b1cec62dd0",
     "contact_sheet": "proof/slice-03/source-contact-sheet.png",
@@ -49,7 +52,10 @@
     "video_sha256": "f9feb49e190ea902b737c1f187083f1d7638b90de14722819ba344e5633ec588",
     "video_bytes": 1228982,
     "video_duration_seconds": 5.041667,
-    "video_dimensions": [960, 960],
+    "video_dimensions": [
+      960,
+      960
+    ],
     "video_fps": 24,
     "video_contact_sheet": "proof/slice-03/video-contact-sheet.png",
     "video_contact_sheet_sha256": "c6fc1be518cf1cb2e7e715b44d0fb39dc35406f18ad733eebe8c2521e058902f",
@@ -73,7 +79,10 @@
     "video_sha256": "2c48336fbf719c3cace3024c73886cce30f4a04afab499057e6d4ad82dcea22d",
     "video_bytes": 1425706,
     "video_duration_seconds": 6.041667,
-    "video_dimensions": [960, 960],
+    "video_dimensions": [
+      960,
+      960
+    ],
     "video_fps": 24,
     "contact_sheet": "proof/slice-03/heft-contact-sheet.png",
     "contact_sheet_sha256": "23b22143eeea304e79ee3ab7e0cd1a2d7a47ec212e34c19f5b735019fc270a1a",
@@ -98,7 +107,10 @@
     "video_sha256": "221cac643dee84d6840ace97ed89d5fe081df01e8ce3028122018e8f327cd83a",
     "video_bytes": 1465228,
     "video_duration_seconds": 7.041667,
-    "video_dimensions": [960, 960],
+    "video_dimensions": [
+      960,
+      960
+    ],
     "video_fps": 24,
     "audio_codec": "aac",
     "contact_sheet": "proof/slice-03/industrial-contact-sheet.png",
@@ -108,7 +120,10 @@
     "full_frames_manifest": "proof/slice-03/industrial-full-frames/manifest.json",
     "full_frames_manifest_sha256": "6d30d918a428aa46138cf4974c1b38c0b0e09e231f3249226978388dbe2c496b",
     "full_frame_count": 14,
-    "full_frame_dimensions": [960, 960],
+    "full_frame_dimensions": [
+      960,
+      960
+    ],
     "full_frame_sample_interval_seconds": 0.5,
     "full_frame_crop": null,
     "review": "Clear improvement in lateral travel and industrial stepping: Strokah stays in side profile, crosses left through several strides, compresses its knees, and kicks up dust. The clip still moves faster and lighter than a colossal machine, and planted feet drift between frames. It is a useful visual direction but not a physics or foot-contact acceptance reference."
@@ -125,5 +140,10 @@
     "proof/slice-03/first-submit-failure.log",
     "proof/slice-03/blender-visual.log",
     "proof/slice-03/blender-rig.log"
-  ]
+  ],
+  "s3_publication": {
+    "receipt": "proof/slice-03/s3-publication.json",
+    "manifest": "proof/slice-03/s3-industrial-manifest.json",
+    "status": "published_and_readback_verified_visual_candidate"
+  }
 }

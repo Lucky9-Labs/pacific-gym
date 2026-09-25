@@ -41,6 +41,17 @@ def request_json(url, key, payload=None):
         raise RuntimeError(f"BFL HTTP {error.code}: {detail}") from None
 
 
+def local_bfl_key(root):
+    """Read the ignored project .env without putting the credential in logs."""
+    env_path = root / ".env"
+    if not env_path.is_file():
+        return None
+    for line in env_path.read_text().splitlines():
+        if line.startswith("BFL_API_KEY="):
+            return line.partition("=")[2].strip().strip('"').strip("'") or None
+    return None
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--request", type=Path, default=Path("proof/slice-03/request.json"))
@@ -81,7 +92,7 @@ def main():
                 print("FLUX3_ARCHIVED_VIDEO_READY", archived_video)
                 return 0
     key = (subprocess.run(["pbpaste"], capture_output=True, text=True, check=True).stdout.strip()
-           if args.clipboard_key else os.getenv("BFL_API_KEY"))
+           if args.clipboard_key else os.getenv("BFL_API_KEY") or local_bfl_key(root))
     if not key:
         print("BFL_API_KEY_UNAVAILABLE", file=sys.stderr)
         return 3

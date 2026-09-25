@@ -7,3 +7,7 @@ Start with [the delivery plan](docs/PLAN.md), [the architecture](docs/ARCHITECTU
 The current Strokah source packet is a reference handoff, not a validated physics asset. The gameplay LOD0 has no skeleton; the clean mechanical rig reference has 62 joints and no animation. FLUX 3 Video will generate the gait visual before the target machine starts authoring motion for the GLB derivative.
 
 The first local acceptance command is `sh scripts/accept-source-intake.sh`. The repo-local plugin is in `plugins/pacific-gym` and its marketplace entry is in `.agents/plugins/marketplace.json`. Codex must trust a plugin hook before that hook executes in a session.
+
+The latest industrial FLUX 3 Video candidate is [the full MP4](proof/slice-03/strokah-flux3-industrial.mp4). Its [S3 publication receipt](proof/slice-03/s3-publication.json) records immutable object versions and verified readback hashes for the MP4 and [Astra handoff manifest](proof/slice-03/s3-industrial-manifest.json). The manifest includes the full video, source asset versions, prompt, settings, and uncropped frame sampling details. This is visual direction only: planted feet drift, so gait and physics are not accepted.
+
+For another BFL run, put `BFL_API_KEY` in a local root `.env` using [.env.example](.env.example) as the template, or export it in the environment. The runner reads either source. `.env` is ignored by Git; credentials are never part of the reference packet. Validate local artifacts with `sh scripts/accept-flux3-gait.sh`.
