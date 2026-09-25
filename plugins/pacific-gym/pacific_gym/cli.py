@@ -158,6 +158,16 @@ def main() -> int:
     start_command.add_argument("--rig", type=Path)
     start_command.add_argument("--reference-frame", type=Path, action="append", default=[])
     start_command.add_argument("--style", default="")
+    start_command.add_argument("--clipboard-key", action="store_true", help="Start the reference research job using the Nimble key on the macOS clipboard")
+    start_command.add_argument("--no-auto-research", action="store_true", help="Create the run without starting research")
+    research_start = sub.add_parser("run-research-start", help="Start the run's cultural and industry reference research job")
+    research_start.add_argument("--manifest", type=Path, required=True)
+    research_start.add_argument("--clipboard-key", action="store_true")
+    research_start.add_argument("--model", default="hf.co/LiquidAI/LFM2.5-VL-3B-GGUF:Q4_K_M")
+    research_start.add_argument("--host", default="http://127.0.0.1:11434")
+    research_poll = sub.add_parser("run-research-poll", help="Poll and save the run's reference research handoff")
+    research_poll.add_argument("--manifest", type=Path, required=True)
+    research_poll.add_argument("--clipboard-key", action="store_true")
     status_command = sub.add_parser("run-status", help="Show the active run and acceptance state")
     status_command.add_argument("--workspace", type=Path, default=Path.cwd())
     candidate_command = sub.add_parser("candidate-add", help="Record a rendered PNG for hook comparison")
@@ -195,11 +205,11 @@ def main() -> int:
         args.out.write_text(json.dumps(result, indent=2) + "\n")
         print(json.dumps(result["comparison"], indent=2))
     elif args.command == "nimble-research":
-        from .nimble_research import clipboard_key, run
+        from .nimble_research import clipboard_key, configured_key, run
         from .trace import redact
         key = ""
         try:
-            key = clipboard_key() if args.clipboard_key else os.environ.get("NIMBLE_API_KEY", "")
+            key = clipboard_key() if args.clipboard_key else configured_key(Path.cwd())
             if not key or not key.isascii() or any(char.isspace() for char in key):
                 raise RuntimeError("NIMBLE_API_KEY_UNAVAILABLE_OR_INVALID")
             result = run(args.reference, args.out, key, args.model, args.host)
@@ -268,8 +278,50 @@ def main() -> int:
     elif args.command == "run-start":
         from .run import goal_text, start
         result = start(args.workspace, args.reference, args.source, args.rig, args.style, args.reference_frame)
+        research_state = result["reference_research"]
+        if not args.no_auto_research:
+            key = ""
+            try:
+                if args.clipboard_key:
+                    from .nimble_research import clipboard_key
+                    key = clipboard_key()
+                else:
+                    from .nimble_research import configured_key
+                    key = configured_key(args.workspace)
+                if key:
+                    from .nimble_research import start_run_research
+                    research_state = start_run_research(Path(result["manifest"]), key,
+                                                        os.environ.get("PACIFIC_GYM_VISION_MODEL", "hf.co/LiquidAI/LFM2.5-VL-3B-GGUF:Q4_K_M"),
+                                                        os.environ.get("PACIFIC_GYM_OLLAMA_HOST", "http://127.0.0.1:11434"))
+            except Exception as error:
+                from .run import load, save
+                from .trace import redact
+                latest = load(Path(result["manifest"]))
+                latest["reference_research"].update(status="failed", error=redact(str(error), [key])[:500])
+                save(latest)
+                research_state = latest["reference_research"]
         print(json.dumps({"run_id": result["run_id"], "manifest": result["manifest"],
+                          "reference_research": research_state,
                           "goal": goal_text(result)}, indent=2))
+    elif args.command in {"run-research-start", "run-research-poll"}:
+        from .nimble_research import (clipboard_key, configured_key, poll_run_research,
+                                      start_run_research)
+        from .run import load
+        from .trace import redact
+        key = ""
+        try:
+            workspace = Path(load(args.manifest)["workspace"])
+            key = clipboard_key() if args.clipboard_key else configured_key(workspace)
+            if not key:
+                raise RuntimeError("NIMBLE_API_KEY_UNAVAILABLE_OR_INVALID")
+            if args.command == "run-research-start":
+                state = start_run_research(args.manifest, key, args.model, args.host)
+            else:
+                state = poll_run_research(args.manifest, key)
+        except Exception as error:
+            print(f"REFERENCE_RESEARCH_FAILED: {redact(str(error), [key])[:500]}", file=sys.stderr)
+            return 3
+        print(json.dumps(state, indent=2))
     elif args.command == "run-status":
         from .run import active_manifest, load
         path = active_manifest(args.workspace)

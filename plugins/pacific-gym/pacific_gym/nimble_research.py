@@ -4,6 +4,7 @@ import base64
 import json
 import html
 import os
+import re
 from urllib.parse import urlparse
 import subprocess
 import time
@@ -19,6 +20,29 @@ CAPTION_PROMPT = """Describe only visible features of this asset reference that 
 
 
 RESEARCH_BRIEF = """Research authoritative, useful references for making a 3D asset based on this visual description. Find: (1) animation principles and mechanical motion tricks relevant to the visible form, (2) artist-facing style guides, workflows, or visual references for modeling/materials, and (3) robotics/physics sources relevant to building or validating a similar articulated asset in NVIDIA Isaac Sim. Prioritize original artist/technical documentation, papers, and official Isaac Sim or NVIDIA sources. Separate visual inspiration from engineering constraints. Return a concise brief with clickable source URLs and explain what each source contributes. Do not claim a still image proves animation or physical validity. Visual description: {caption}"""
+
+
+def configured_key(workspace: Path) -> str:
+    """Read only NIMBLE_API_KEY from the process environment or workspace .env."""
+    key = os.environ.get("NIMBLE_API_KEY", "")
+    if not key:
+        env_file = workspace.expanduser().resolve() / ".env"
+        try:
+            lines = env_file.read_text().splitlines()
+        except OSError:
+            lines = []
+        for line in lines:
+            match = re.match(r"^\s*(?:export\s+)?NIMBLE_API_KEY\s*=\s*(.*?)\s*$", line)
+            if match:
+                key = match.group(1)
+                if len(key) >= 2 and key[0] == key[-1] and key[0] in "\"'":
+                    key = key[1:-1]
+                else:
+                    key = re.split(r"\s+#", key, maxsplit=1)[0].strip()
+                break
+    if not key or not key.isascii() or any(char.isspace() for char in key):
+        return ""
+    return key
 
 
 def caption_image(reference: Path, model: str, host: str) -> tuple[str, dict]:
@@ -81,6 +105,129 @@ def nimble_research(api_key: str, brief: str) -> dict:
         raise ValueError("Nimble response did not contain a completed research brief")
     return {"request_id": result.get("request_id", run_id), "content": content,
             "trust": output.get("trust"), "status": run.get("status", "completed")}
+
+
+def _nimble_call(api_key: str, url: str, payload: dict | None = None) -> dict:
+    request = Request(url, data=json.dumps(payload).encode() if payload is not None else None,
+                      headers={"Authorization": f"Bearer {api_key}",
+                               "Content-Type": "application/json"},
+                      method="POST" if payload is not None else "GET")
+    try:
+        with urlopen(request, timeout=90) as response:
+            return json.load(response)
+    except HTTPError as error:
+        raise RuntimeError(f"Nimble research request failed with HTTP {error.code}") from None
+
+
+def start_nimble_job(api_key: str, brief: str) -> dict:
+    run = _nimble_call(api_key, "https://sdk.nimbleway.com/v2/agents/runs", {"input": brief})
+    run_id, agent_id = run.get("id"), run.get("web_search_agent_id")
+    if not run_id or not agent_id:
+        raise ValueError("Nimble did not return run and agent IDs")
+    return {"run_id": run_id, "agent_id": agent_id, "status": run.get("status", "queued"),
+            "is_active": run.get("is_active", True)}
+
+
+def poll_nimble_job(api_key: str, job: dict) -> dict:
+    base = "https://sdk.nimbleway.com/v2/agents"
+    run = _nimble_call(api_key, f"{base}/{job['agent_id']}/runs/{job['run_id']}")
+    if run.get("is_active", False):
+        return {"status": run.get("status", "running"), "is_active": True}
+    if run.get("status") != "completed":
+        return {"status": run.get("status", "unknown"), "is_active": False}
+    result = _nimble_call(api_key, f"{base}/{job['agent_id']}/runs/{job['run_id']}/result")
+    output = result.get("output", {})
+    content = output.get("content", "") if isinstance(output, dict) else ""
+    if not content:
+        raise ValueError("Nimble response did not contain a completed research brief")
+    return {"status": "completed", "is_active": False,
+            "request_id": result.get("request_id", job["run_id"]),
+            "content": content, "trust": output.get("trust")}
+
+
+def save_research_result(reference: Path, output_dir: Path, caption: str,
+                         vision_model: dict, research: dict) -> dict:
+    result = {
+        "schema_version": 1, "provider": "Nimbleway Web Search Agents",
+        "input": {"path": str(reference.resolve()), "sha256": sha256(reference),
+                  "media_sent_to_nimble": False},
+        "local_vision_model": vision_model, "caption_prompt": CAPTION_PROMPT,
+        "visual_description": caption, "nimble_request_id": research["request_id"],
+        "research_brief": research["content"], "trust": research.get("trust"),
+    }
+    annotate_result(result)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    (output_dir / "nimble-research.json").write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
+    (output_dir / "flux-prompt-draft.txt").write_text(result["flux_prompt_draft"])
+    (output_dir / "reference-map.html").write_text(render_reference_report(result, reference, output_dir))
+    return result
+
+
+def start_run_research(manifest: Path, api_key: str, model: str,
+                       host: str = "http://127.0.0.1:11434") -> dict:
+    from .run import load, save
+    data = load(manifest)
+    research_state = data["reference_research"]
+    if research_state.get("status") not in {"waiting_for_credentials", "failed"}:
+        raise ValueError(f"Research cannot start from status {research_state.get('status')}")
+    image = next((Path(item["path"]) for item in data["inputs"]
+                  if item["role"] in {"reference", "reference_frame"}
+                  and Path(item["path"]).suffix.lower() in {".png", ".jpg", ".jpeg", ".webp"}), None)
+    if image is None:
+        research_state.update(status="waiting_for_reference_image",
+                              error="Provide a pinned PNG/JPG/WebP reference frame to start visual research.")
+        save(data)
+        return research_state
+    caption, vision_model = caption_image(image, model, host)
+    job = start_nimble_job(api_key, RESEARCH_BRIEF.format(caption=caption))
+    task_path = Path(data["manifest"]).parent / "research" / "task.json"
+    task = {"schema_version": 1, "reference": str(image.resolve()),
+            "reference_sha256": sha256(image), "caption": caption,
+            "vision_model": vision_model, "job": job}
+    task_path.parent.mkdir(parents=True, exist_ok=True)
+    task_path.write_text(json.dumps(task, indent=2, sort_keys=True) + "\n")
+    research_state.update(status="running", reference_sha256=task["reference_sha256"],
+                          job={"run_id": job["run_id"], "agent_id": job["agent_id"]},
+                          task=str(task_path), receipt=None, error=None)
+    save(data)
+    return research_state
+
+
+def poll_run_research(manifest: Path, api_key: str) -> dict:
+    from .run import load, save
+    data = load(manifest)
+    state = data["reference_research"]
+    if state.get("status") != "running":
+        return state
+    task_path = Path(state["task"]).resolve(strict=True)
+    run_root = Path(data["manifest"]).parent.resolve()
+    if not task_path.is_relative_to(run_root):
+        raise ValueError("Research task is outside this run")
+    task = json.loads(task_path.read_text())
+    reference = Path(task["reference"])
+    if sha256(reference) != task["reference_sha256"]:
+        state.update(status="failed", error="Reference image hash changed while research was running")
+        save(data)
+        return state
+    result = poll_nimble_job(api_key, task["job"])
+    if result["is_active"]:
+        state["provider_status"] = result["status"]
+        save(data)
+        return state
+    if result["status"] != "completed":
+        state.update(status="failed", error=f"Nimble job ended with status {result['status']}")
+        save(data)
+        return state
+    output_dir = task_path.parent
+    receipt = save_research_result(reference, output_dir, task["caption"], task["vision_model"], result)
+    state.update(status="complete", job={"run_id": task["job"]["run_id"],
+                                          "agent_id": task["job"]["agent_id"]},
+                  receipt=str(output_dir / "nimble-research.json"),
+                  flux_prompt=str(output_dir / "flux-prompt-draft.txt"),
+                  reference_map=str(output_dir / "reference-map.html"),
+                  source_count=len(receipt.get("tagged_references", [])), error=None)
+    save(data)
+    return state
 
 
 def tag_references(trust: dict) -> list[dict]:
@@ -233,26 +380,7 @@ def run(reference: Path, out: Path, api_key: str, model: str,
         host: str = "http://127.0.0.1:11434") -> dict:
     caption, vision_model = caption_image(reference, model, host)
     research = nimble_research(api_key, RESEARCH_BRIEF.format(caption=caption))
-    prompt = ""
-    result = {
-        "schema_version": 1,
-        "provider": "Nimbleway Web Search Agents",
-        "input": {"path": str(reference), "sha256": sha256(reference),
-                  "media_sent_to_nimble": False},
-        "local_vision_model": vision_model,
-        "caption_prompt": CAPTION_PROMPT,
-        "visual_description": caption,
-        "nimble_request_id": research["request_id"],
-        "research_brief": research["content"],
-        "trust": research["trust"],
-    }
-    annotate_result(result)
-    out.mkdir(parents=True, exist_ok=True)
-    (out / "nimble-research.json").write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
-    (out / "flux-prompt-draft.txt").write_text(result["flux_prompt_draft"])
-    report = render_reference_report(result, reference, out)
-    (out / "reference-map.html").write_text(report)
-    return result
+    return save_research_result(reference, out, caption, vision_model, research)
 
 
 def clipboard_key() -> str:

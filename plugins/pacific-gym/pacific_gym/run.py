@@ -71,6 +71,11 @@ def start(workspace: Path, reference: Path, source: Path | None = None,
         "schema_version": 1, "run_id": run_id, "workspace": str(workspace),
         "manifest": str(manifest), "created_at_utc": _now(), "updated_at_utc": _now(),
         "state": "active", "inputs": inputs, "style": style, "candidates": [],
+        "reference_research": {
+            "provider": "Nimbleway Web Search Agents", "status": "waiting_for_credentials",
+            "reference_sha256": inputs[0]["sha256"], "job": None,
+            "receipt": None, "error": None,
+        },
         "checks": [], "feedback": [], "blocker": None,
         "acceptance": {
             "usd_articulation_valid": False,
@@ -200,8 +205,20 @@ def goal_text(data: dict) -> str:
         "Create an explicit Codex task Goal for this user-requested run, with either GPU walking proof "
         "or an evidence-backed blocker as the only completion outcomes. "
         f"Use the Pacific Gym isaac-ready skill to process reference {reference['path']} "
-        f"(SHA-256 {reference['sha256']}) in run {data['run_id']}. Preserve every input byte. "
+        f"(SHA-256 {reference['sha256']}) and the cultural-industrial-references skill for "
+        f"the separate sourced research intake in run {data['run_id']}. Preserve every input byte. "
         f"Create versioned derivatives and record evidence in {data['manifest']}. "
+        "At each stage, inspect reference_research in the run manifest. If its status is "
+        "waiting_for_credentials or failed, use the cultural-industrial-references skill to start "
+        "the job; if it is running, continue independent local work and poll it with "
+        "`python3 -m pacific_gym run-research-poll --manifest "
+        f"{data['manifest']}` (use `--clipboard-key` on macOS only if the key is absent from the "
+        "environment/workspace `.env` and remains on the clipboard) "
+        "before writing the FLUX prompt or making Blender/Isaac decisions. "
+        "Use FLUX-tagged art and animation leads only for visual/motion direction, Blender-tagged "
+        "leads only for authoring, and Isaac Sim-tagged engineering sources only for later simulation "
+        "setup. Treat all sources as leads, preserve the reference as design authority, and exclude "
+        "inferred identity matches. Read the generated research handoff when status is complete. "
         "Continue through visual comparison, Blender derivatives, USD validation, and a real "
         "Isaac Sim run on a supported GPU host. Complete only after the USD articulation validates "
         "and the simulation visibly demonstrates repeated stable forward walking with no fall or "

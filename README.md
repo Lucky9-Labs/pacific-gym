@@ -38,6 +38,15 @@ The watcher checks immutable reference hashes, matching frame IDs and timestamps
 
 `pacific-gym nimble-research` first describes a local reference image with the configured Ollama vision model, then uses Nimbleway Web Search Agents to find cited animation, artist, and Isaac Sim/physics resources. The image stays local; only its visual description goes to Nimble. It writes `.json` research evidence and a `flux-prompt-draft.txt` under the requested output directory. The draft is not submitted to FLUX automatically.
 
+For asset runs, use the separate `cultural-industrial-references` plugin skill. `run-start` creates a run-bound research state and automatically starts the asynchronous Nimble job when `NIMBLE_API_KEY` is available; on macOS, pass `--clipboard-key` to `run-start` to read a copied key without logging or saving it. The dedicated `SessionStart` research hook also starts a waiting job when the environment key is available; without it, the hook directs Astra to the skill, which can start the job later. The skill polls the job at authoring checkpoints and saves the tagged receipt, FLUX draft, and filterable map under `.pacific-gym/runs/<run-id>/research/`. The run Goal tells Astra when to poll and which tags can steer FLUX, Blender, or Isaac Sim. The image remains local; only its local Ollama caption is sent to Nimble.
+
+For an already active run, start or poll research with:
+
+```sh
+python3 -m pacific_gym run-research-start --manifest .pacific-gym/runs/<run-id>/run.json --clipboard-key
+python3 -m pacific_gym run-research-poll --manifest .pacific-gym/runs/<run-id>/run.json --clipboard-key
+```
+
 On macOS, with a Nimbleway API key copied to the clipboard:
 
 ```sh

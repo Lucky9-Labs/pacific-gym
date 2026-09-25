@@ -7,6 +7,8 @@ description: Take an attached 3D reference through immutable, hash-tracked Blend
 
 Read `docs/PLAN.md` and `docs/ARCHITECTURE.md` before starting. Treat attached files as immutable inputs. Keep every derivative, receipt, and proof artifact under `.pacific-gym/runs/<run-id>/`; never write over an input or a tracked source asset.
 
+Use the separate `cultural-industrial-references` skill for image-based artist, animation, and industry research. `run-start` initializes that research state automatically and starts Nimble when `NIMBLE_API_KEY` is present. The dedicated SessionStart research hook also starts a waiting job when that environment variable is present; otherwise it directs Astra to the reference skill, where the key can be read from the clipboard by an explicit command. The long-running Goal must poll and read the tagged receipt before each downstream authoring checkpoint.
+
 ## Start the user-requested long-running Goal
 
 When the user asks to “Use Pacific Gym to take care of this” and says to keep going until Isaac Sim walking proof or a documented blocker:
@@ -31,7 +33,7 @@ python3 -m pacific_gym inspect --spec fixtures/strokah-source.json --out .pacifi
 
 The inspection must distinguish the static visual asset from the unanimated mechanical rig reference. Do not infer shared bindings from names. Do not request or infer a premade gait asset: FLUX supplies visual gait direction before production motion authoring.
 
-For a sourced pre-generation research brief from an image, run `python3 -m pacific_gym nimble-research --reference <image> --out <run-local-dir> --clipboard-key` on macOS (or provide `NIMBLE_API_KEY`). The image is described locally by Ollama; only the text description is sent to Nimble. Review `nimble-research.json` and `flux-prompt-draft.txt` before using the prompt. Art and motion references are visual direction; physics sources inform later Isaac Sim authoring and never establish physical validity by themselves.
+The manual `nimble-research` command remains available for one-off research outside an asset run. For run-bound work, use `cultural-industrial-references` so the job state, tagged receipt, and review aids are saved beside the run manifest.
 
 ## Candidate feedback
 For the local static comparison pulse, use Liquid AI's official Ollama model `hf.co/LiquidAI/LFM2.5-VL-3B-GGUF:Q4_K_M`. Check its resolved digest against `proof/slice-06/proof.json` and run `sh scripts/accept-comparison-pulse.sh` from the repository root.
