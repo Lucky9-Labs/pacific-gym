@@ -85,8 +85,16 @@ def start(workspace: Path, reference: Path, source: Path | None = None,
 def load(path: Path) -> dict:
     path = path.expanduser().resolve(strict=True)
     data = json.loads(path.read_text())
-    if data.get("schema_version") != 1 or data.get("manifest") != str(path):
+    recorded = Path(data["manifest"]).expanduser()
+    try:
+        recorded_resolved = recorded.resolve(strict=False)
+    except OSError:
+        recorded_resolved = recorded
+    if data.get("schema_version") != 1 or recorded_resolved != path:
         raise ValueError(f"Invalid Pacific Gym run manifest: {path}")
+    # A target mount may expose the same run through a symlink. Keep the
+    # canonical location in memory so subsequent writes use the resolved path.
+    data["manifest"] = str(path)
     return data
 
 
