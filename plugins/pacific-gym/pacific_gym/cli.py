@@ -125,6 +125,20 @@ def main() -> int:
     comparison.add_argument("--pair-out", type=Path)
     comparison.add_argument("--model", default="hf.co/LiquidAI/LFM2.5-VL-3B-GGUF:Q4_K_M")
     comparison.add_argument("--host", default="http://127.0.0.1:11434")
+    publish_frame = sub.add_parser("publish-candidate-frame", help="Mark a completed Blender PNG as a timestamped candidate frame")
+    publish_frame.add_argument("--reference-manifest", type=Path, required=True)
+    publish_frame.add_argument("--candidate-dir", type=Path, required=True)
+    publish_frame.add_argument("--frame-id", required=True)
+    publish_frame.add_argument("--timestamp", type=float, required=True)
+    publish_frame.add_argument("--image", type=Path, required=True)
+    judge_frames = sub.add_parser("judge-keyframes", help="Watch for exact FLUX-reference/Blender-candidate pairs and judge them locally")
+    judge_frames.add_argument("--reference-manifest", type=Path, required=True)
+    judge_frames.add_argument("--candidate-dir", type=Path, required=True)
+    judge_frames.add_argument("--out-dir", type=Path, required=True)
+    judge_frames.add_argument("--model", default="hf.co/LiquidAI/LFM2.5-VL-3B-GGUF:Q4_K_M")
+    judge_frames.add_argument("--host", default="http://127.0.0.1:11434")
+    judge_frames.add_argument("--interval", type=float, default=0.5)
+    judge_frames.add_argument("--once", action="store_true", help="scan once; never infer for missing, incomplete, or mismatched pairs")
     trace_command = sub.add_parser("trace", help="Export a redacted development trace and verify RawTree read-back")
     trace_command.add_argument("--repo-root", type=Path, required=True)
     trace_command.add_argument("--out", type=Path, required=True)
@@ -139,6 +153,12 @@ def main() -> int:
         args.out.parent.mkdir(parents=True, exist_ok=True)
         args.out.write_text(json.dumps(result, indent=2) + "\n")
         print(json.dumps(result["comparison"], indent=2))
+    elif args.command == "publish-candidate-frame":
+        from .keyframe_judge import publish_cli
+        return publish_cli(args)
+    elif args.command == "judge-keyframes":
+        from .keyframe_judge import watch_cli
+        return watch_cli(args)
     elif args.command == "trace":
         session_id = os.environ.get("CODEX_SESSION_ID", "")
         thread_id = os.environ.get("CODEX_THREAD_ID", "")

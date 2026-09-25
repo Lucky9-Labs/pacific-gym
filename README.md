@@ -15,3 +15,20 @@ For another BFL run, put `BFL_API_KEY` in a local root `.env` using [.env.exampl
 RawTree trace acceptance is `sh scripts/accept-rawtree-trace.sh`. It runs local trace/redaction checks, then uses `RAWTREE_API_KEY` (or `--api-key-file /absolute/path` passed to the script) to insert redacted event rows into `luckybucky_hackathon` and query them back by run ID. Every row includes the Codex session and thread IDs. RawTree table names cannot contain hyphens, and nested tool input/result values are stored as canonical JSON strings to prevent RawTree from flattening their keys into dotted columns. RawTree separates write ingestion from its read-only SQL query API; its published MCP reference documents whole-table deletion with admin permission, but no row-delete operation. A write-enabled data key therefore does not make mutation SQL available through the query endpoint. The acceptance command records this limitation and exits 2 after a successful round-trip until a supported row-level cleanup mechanism is available. See [the RawTree trace notes](proof/slice-02/README.md) for the live verification state and source links. Proof excludes API keys and media bytes. The current fixture is a representative replay of the source inspection proof, so its capture timing does not claim to measure the original inspection run.
 
 The controlled Liquid vision comparison pulse uses Liquid AI's official `hf.co/LiquidAI/LFM2.5-VL-3B-GGUF:Q4_K_M` model in local Ollama. Its exact tested digest, setup, and visual proof are in [proof/slice-06/README.md](proof/slice-06/README.md). Run it with `sh scripts/accept-comparison-pulse.sh`. This is a manual command; the plugin does not yet register a comparison hook or auto-steer Codex.
+
+For animation review, `pacific-gym judge-keyframes` watches for timestamp-paired FLUX reference frames and Blender candidate renders. Render each candidate to a PNG with the frame ID from the reference manifest, then mark it complete only after Blender finishes writing it:
+
+```sh
+PYTHONPATH=plugins/pacific-gym python3 -m pacific_gym publish-candidate-frame \
+  --reference-manifest proof/slice-03/industrial-full-frames/manifest.json \
+  --candidate-dir .pacific-gym/runs/<run-id>/synthetic-keyframes \
+  --frame-id frame-001 --timestamp 0.0 \
+  --image .pacific-gym/runs/<run-id>/synthetic-keyframes/frame-001.png
+
+PYTHONPATH=plugins/pacific-gym python3 -m pacific_gym judge-keyframes \
+  --reference-manifest proof/slice-03/industrial-full-frames/manifest.json \
+  --candidate-dir .pacific-gym/runs/<run-id>/synthetic-keyframes \
+  --out-dir .pacific-gym/runs/<run-id>/paired-judgments
+```
+
+The watcher checks immutable reference hashes, matching frame IDs and timestamps, candidate completion/hash, and equal image dimensions before calling local Ollama. It emits one structured advisory result per completed pair and waits on missing or mismatched frames. Stop it with Ctrl-C. This does not add a Codex `PostToolUse` hook or establish physics, gait, or Isaac Sim acceptance. Run its deterministic gate checks with `PYTHONPATH=plugins/pacific-gym python3 -m unittest discover -s plugins/pacific-gym/tests -p 'test_keyframe_judge.py' -v`.
