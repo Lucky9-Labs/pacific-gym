@@ -7,3 +7,5 @@ Start with [the delivery plan](docs/PLAN.md), [the architecture](docs/ARCHITECTU
 The current Strokah source packet is a reference handoff, not a validated physics asset. The gameplay LOD0 has no skeleton; the clean mechanical rig reference has 62 joints and no animation. FLUX 3 Video will generate the gait visual before the target machine starts authoring motion for the GLB derivative.
 
 The first local acceptance command is `sh scripts/accept-source-intake.sh`. The repo-local plugin is in `plugins/pacific-gym` and its marketplace entry is in `.agents/plugins/marketplace.json`. Codex must trust a plugin hook before that hook executes in a session.
+
+RawTree trace acceptance is `sh scripts/accept-rawtree-trace.sh`. It runs local trace/redaction checks, then uses `RAWTREE_API_KEY` (or `--api-key-file /absolute/path` passed to the script) to insert a redacted development trace and query it back by run ID. Without a key it writes a blocked proof under `proof/slice-02` and exits 2. The proof contains no API key or media bytes. This is a representative replay of the source inspection proof, so its capture timing does not claim to measure the original inspection run.
