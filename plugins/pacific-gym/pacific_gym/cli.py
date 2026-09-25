@@ -210,7 +210,8 @@ def main() -> int:
         print(json.dumps({"provider": result["provider"], "request_id": result["nimble_request_id"],
                           "reference_sha256": result["input"]["sha256"],
                           "research_path": str(args.out / "nimble-research.json"),
-                          "prompt_path": str(args.out / "flux-prompt-draft.txt")}, indent=2))
+                          "prompt_path": str(args.out / "flux-prompt-draft.txt"),
+                          "report_path": str(args.out / "reference-map.html")}, indent=2))
     elif args.command == "publish-candidate-frame":
         from .keyframe_judge import publish_cli
         return publish_cli(args)

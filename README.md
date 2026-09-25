@@ -48,3 +48,10 @@ PYTHONPATH=plugins/pacific-gym python3 -m pacific_gym nimble-research \
 ```
 
 Alternatively set `NIMBLE_API_KEY` in the environment or ignored root `.env`. The key is held in process memory only and is not included in output. Nimble's API is text research, so the image caption is generated locally rather than uploading image bytes.
+
+The command writes `nimble-research.json`, `flux-prompt-draft.txt`, and a filterable `reference-map.html`. The receipt separates artist and animation leads for FLUX from Blender rigging and Isaac Sim physics references; inferred identity matches are tagged and excluded from the prompt. Render a local static map from the receipt with:
+
+```sh
+python3 scripts/render-nimble-reference-map.py \
+  --receipt .pacific-gym/nimble/strokah/nimble-research.json
+```

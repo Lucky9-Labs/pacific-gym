@@ -2,6 +2,9 @@
 
 import base64
 import json
+import html
+import os
+from urllib.parse import urlparse
 import subprocess
 import time
 from pathlib import Path
@@ -80,20 +83,157 @@ def nimble_research(api_key: str, brief: str) -> dict:
             "trust": output.get("trust"), "status": run.get("status", "completed")}
 
 
-def create_flux_prompt(caption: str, research: str) -> str:
-    return ("Create a FLUX image-to-video or asset-generation prompt from the supplied reference. "
-            "Preserve the reference identity and visible proportions. Use the visual notes and "
-            "artist-facing references for style and motion language. Treat robotics/physics "
-            "sources as constraints for later Isaac Sim authoring, not as claims that the image "
-            "is physically valid. Do not add unsupported geometry.\n\n"
-            f"VISUAL NOTES\n{caption}\n\nRESEARCH NOTES\n{research}\n")
+def tag_references(trust: dict) -> list[dict]:
+    """Apply stable editorial tags to Nimble's ordered, cited source list."""
+    sources = trust.get("sources", [])
+    claims = trust.get("claims", [])
+    tagged = []
+    for index, source in enumerate(sources, 1):
+        title = (source.get("title") or "").lower()
+        host = urlparse(source.get("url", "")).hostname or ""
+        host = host.lower()
+        if any(term in title for term in ("big hero 6", "baymax")) or host in {
+                "wikipedia.org", "wordpress.com", "makerworld.com"}:
+            tags = ["similarity-lead", "inferred-identity", "excluded"]
+            used_by = "Excluded from prompt"
+            use = "Nimble inferred a character resemblance from a generic silhouette; this was not supplied as identity by the user."
+        elif "blender.org" in host or any(term in title for term in ("rigify", "inverse kinematics constraint")):
+            tags = ["blender", "rigging", "inverse-kinematics"]
+            used_by = "Blender authoring"
+            use = "Guide later rig controls and IK setup; these sources do not validate this asset's rig."
+        elif any(term in title for term in ("isaac sim", "robot", "joint", "degree of freedom", "humanoid usd", "kinematic")) or "nvidia.com" in host:
+            tags = ["isaac-sim", "robotics", "articulation"]
+            used_by = "Isaac Sim handoff"
+            use = "Inform later USD, articulation, or joint authoring. A source guide is not a runtime physics result."
+        elif any(term in title for term in ("animation", "animator", "stop-motion", "core competencies")):
+            tags = ["animation", "motion-language"]
+            used_by = "FLUX prompt"
+            use = "Inform readable timing, anticipation, arcs, and follow-through if motion is requested."
+        elif any(term in title for term in ("pbr", "texturing", "toolbag", "marmoset", "stylized character", "material")):
+            tags = ["artist-reference", "materials", "look-development"]
+            used_by = "FLUX prompt"
+            use = "Inform matte material, lighting, and presentation language while preserving the reference design."
+        else:
+            tags = ["artist-reference", "style-research"]
+            used_by = "Review before use"
+            use = "General reference lead. Review its contents before using it to steer asset style."
+        claim = claims[index - 1] if index <= len(claims) else {}
+        citations = claim.get("citations", []) if isinstance(claim, dict) else []
+        citation = next((item for item in citations if item.get("url") == source.get("url")), {})
+        url = source.get("url", "")
+        if urlparse(url).scheme != "https":
+            url = ""
+        tagged.append({
+            "id": index,
+            "title": source.get("title") or url or f"Reference {index}",
+            "url": url,
+            "tags": tags,
+            "used_by": used_by,
+            "use": use,
+            "source_type": source.get("type", citation.get("source_type", "unknown")),
+            "source_category": source.get("source_category", citation.get("source_category", "unknown")),
+            "confidence": claim.get("confidence", "unknown") if isinstance(claim, dict) else "unknown",
+        })
+    return tagged
+
+
+def create_flux_prompt(caption: str, references: list[dict]) -> str:
+    visual_refs = [item for item in references if item["used_by"] == "FLUX prompt"]
+    motion = [item for item in visual_refs if "animation" in item["tags"]]
+    lookdev = [item for item in visual_refs if "materials" in item["tags"]]
+    motion_sources = "; ".join(f"[{item['id']}] {item['title']}" for item in motion[:3])
+    look_sources = "; ".join(f"[{item['id']}] {item['title']}" for item in lookdev[:3])
+    return (
+        "Use the supplied image as the identity and design authority. Preserve its silhouette, "
+        "visible proportions, joint placement, and neutral matte-white treatment. Do not infer "
+        "or add a named character, hidden features, armor, props, or extra geometry.\n\n"
+        "VISUAL DESCRIPTION\n" + caption + "\n\n"
+        "STYLE DIRECTION\nKeep the matte white, low-texture surface, soft gray contact shadows, "
+        "and diffuse studio lighting visible in the reference. Use restrained rim separation "
+        "and clear silhouette presentation. Artist-facing material and look-development leads: "
+        + (look_sources or "none") + ".\n\n"
+        "OPTIONAL MOTION DIRECTION\nThe supplied image is static and does not establish a gait. "
+        "If a motion variant is requested, make weight readable through anticipation, gradual "
+        "ease-in/ease-out, curved limb paths, and staggered follow-through with a settled hold. "
+        "Keep the head, torso, limbs, and visible joints consistent with the reference. "
+        "Animation-principle leads: " + (motion_sources or "none") + ".\n\n"
+        "Use this draft for visual generation only. Blender rigging and Isaac Sim/physics "
+        "references are tagged separately for later authoring; they are intentionally not part "
+        "of the FLUX prompt and do not prove physical validity."
+    )
+
+
+def render_reference_report(result: dict, reference_path: Path, output_dir: Path) -> str:
+    """Render a self-contained source map; all remote content is HTML-escaped."""
+    refs = result.get("tagged_references", [])
+    cards = []
+    for item in refs:
+        title = html.escape(str(item["title"]))
+        url = html.escape(str(item.get("url", "")), quote=True)
+        link = f'<a href="{url}" target="_blank" rel="noreferrer">Open source ↗</a>' if url else "URL unavailable"
+        tags = "".join(f'<span class="tag">{html.escape(tag)}</span>' for tag in item["tags"])
+        cards.append(
+            f'<article class="source" data-use="{html.escape(item["used_by"], quote=True)}" '
+            f'data-search="{html.escape((item["title"] + " " + " ".join(item["tags"])).lower(), quote=True)}">'
+            f'<div class="source-top"><span class="source-id">REF {item["id"]:02d}</span>'
+            f'<span class="confidence">Nimble: {html.escape(str(item["confidence"]))}</span></div>'
+            f'<h3>{title}</h3><div class="tags">{tags}</div>'
+            f'<p>{html.escape(str(item["use"]))}</p>'
+            f'<p class="origin">Nimble labels this source: {html.escape(str(item["source_type"]))} · '
+            f'{html.escape(str(item["source_category"]))}</p>{link}</article>'
+        )
+    caption = html.escape(str(result.get("visual_description", "")))
+    digest = html.escape(str(result.get("input", {}).get("sha256", "")))
+    rel_image = os.path.relpath(reference_path.resolve(), output_dir.resolve())
+    image_uri = html.escape(rel_image, quote=True)
+    flux_count = sum(item["used_by"] == "FLUX prompt" for item in refs)
+    blender_count = sum(item["used_by"] == "Blender authoring" for item in refs)
+    isaac_count = sum(item["used_by"] == "Isaac Sim handoff" for item in refs)
+    excluded_count = sum(item["used_by"] == "Excluded from prompt" for item in refs)
+    prompt = html.escape(str(result.get("flux_prompt_draft", "")))
+    return f"""<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pacific Gym · Nimble reference map</title>
+<style>
+:root{{--bg:#0b1016;--panel:#111a23;--line:#243441;--ink:#edf4f4;--muted:#9dafb7;--mint:#89edcc;--amber:#ffc879;--blue:#93c5fd;--rose:#f3a2a7}}
+*{{box-sizing:border-box}}body{{margin:0;background:radial-gradient(ellipse at 15% 0,#1b2d32 0,transparent 35%),var(--bg);color:var(--ink);font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}}
+main{{max-width:1440px;margin:auto;padding:42px 48px 70px}}.eyebrow{{letter-spacing:.18em;text-transform:uppercase;color:var(--mint);font-size:11px;font-weight:700}}h1{{font-size:42px;line-height:1.05;letter-spacing:-.04em;margin:12px 0}}.lede{{color:var(--muted);max-width:780px;font-size:16px}}
+.hero{{display:grid;grid-template-columns:300px 1fr;gap:28px;margin:30px 0 32px;padding:20px;border:1px solid var(--line);border-radius:20px;background:#101922e8}}.hero img{{width:100%;height:280px;object-fit:contain;background:#d8dadd;border-radius:12px}}.caption{{color:#d8e3e6;font-size:14px}}.hash{{color:var(--muted);font:11px ui-monospace,monospace;word-break:break-all}}
+.flow{{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:22px 0 32px}}.step{{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;min-height:112px}}.step b{{display:block;color:var(--mint);font-size:11px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px}}.step strong{{font-size:16px}}.step small{{display:block;color:var(--muted);margin-top:5px}}
+h2{{font-size:23px;letter-spacing:-.025em;margin:36px 0 12px}}.uses{{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}}.use{{border-radius:16px;padding:18px;border:1px solid var(--line);background:var(--panel)}}.use h3{{margin:0 0 6px;font-size:18px}}.use p{{margin:0;color:var(--muted);font-size:13px}}.use .count{{font:12px ui-monospace,monospace;color:var(--mint);margin-top:12px}}
+.use.flux{{border-top:3px solid var(--mint)}}.use.blender{{border-top:3px solid var(--amber)}}.use.isaac{{border-top:3px solid var(--blue)}}.filterbar{{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:18px 0}}button{{font:inherit;border:1px solid var(--line);background:#111a23;color:var(--muted);padding:8px 13px;border-radius:999px;cursor:pointer}}button.active,button:hover{{color:var(--ink);border-color:var(--mint)}}.filter-count{{margin-left:auto;color:var(--muted);font:12px ui-monospace,monospace}}
+.grid{{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}}.source{{min-height:218px;padding:16px;border-radius:14px;background:var(--panel);border:1px solid var(--line);display:flex;flex-direction:column}}.source[hidden]{{display:none}}.source[data-use="FLUX prompt"]{{border-left:3px solid var(--mint)}}.source[data-use="Blender authoring"]{{border-left:3px solid var(--amber)}}.source[data-use="Isaac Sim handoff"]{{border-left:3px solid var(--blue)}}.source[data-use="Excluded from prompt"]{{border-left:3px solid var(--rose)}}.source-top{{display:flex;justify-content:space-between;color:var(--muted);font:10px ui-monospace,monospace}}.source h3{{font-size:16px;line-height:1.3;margin:10px 0}}.tags{{display:flex;gap:5px;flex-wrap:wrap}}.tag{{font-size:10px;border-radius:99px;padding:3px 8px;background:#203139;color:var(--mint)}}.source p{{font-size:12px;color:#c1cdd0;margin:12px 0 5px}}.source .origin{{font-size:10px;color:var(--muted);margin-top:auto;padding-top:10px}}.source a{{font-size:12px;color:var(--mint);text-decoration:none;margin-top:9px}}.source a:hover{{text-decoration:underline}}
+.prompt{{white-space:pre-wrap;background:#080d12;border:1px solid var(--line);border-radius:14px;padding:20px;color:#c9d9db;font:12px/1.7 ui-monospace,SFMono-Regular,monospace;max-height:430px;overflow:auto}}.note{{color:var(--muted);font-size:12px;margin:14px 0}}footer{{margin-top:32px;border-top:1px solid var(--line);padding-top:16px;color:var(--muted);font-size:11px}}
+@media(max-width:900px){{main{{padding:28px 20px}}.hero{{grid-template-columns:1fr}}.hero img{{height:220px}}.flow,.uses{{grid-template-columns:repeat(2,1fr)}}.grid{{grid-template-columns:repeat(2,1fr)}}h1{{font-size:34px}}}}@media(max-width:560px){{.flow,.uses,.grid{{grid-template-columns:1fr}}}}
+</style></head><body><main>
+<div class="eyebrow">Pacific Gym / Reference research</div><h1>From one image to usable guidance.</h1>
+<p class="lede">Nimble’s cited leads are grouped by where they belong. Visual and animation notes can shape FLUX. Rigging notes stay with Blender. Physics and USD references stay with the Isaac Sim handoff.</p>
+<section class="hero"><img src="{image_uri}" alt="Local reference image"><div><div class="eyebrow">Local visual read · image not sent to Nimble</div><p class="caption">{caption}</p><p class="hash">SHA-256 · {digest}</p><p class="note">This is a static neutral pose. It does not demonstrate a working rig, gait, balance, or physical validity.</p></div></section>
+<section class="flow"><div class="step"><b>01 · Input</b><strong>Reference PNG</strong><small>Captioned on this machine with Ollama vision</small></div><div class="step"><b>02 · Research</b><strong>Nimble Web Search Agent</strong><small>Text caption only · cited run {html.escape(str(result.get('nimble_request_id', '')))}</small></div><div class="step"><b>03 · Tag</b><strong>{len(refs)} cited sources</strong><small>Grouped by use and provider confidence</small></div><div class="step"><b>04 · Hand off</b><strong>FLUX draft + authoring map</strong><small>Prompt draft is reviewable; generation stays manual</small></div></section>
+<h2>Where the references go</h2><section class="uses"><div class="use flux"><h3>FLUX · visual direction</h3><p>Use artist and animation leads for material, lighting, readable timing, arcs, and follow-through. Preserve the pictured identity and proportions.</p><div class="count">{flux_count} tagged references</div></div><div class="use blender"><h3>Blender · rig authoring</h3><p>Use the Blender manual leads to guide rig controls and inverse kinematics. These do not certify this image’s rig.</p><div class="count">{blender_count} tagged references</div></div><div class="use isaac"><h3>Isaac Sim · later physics work</h3><p>Use NVIDIA/USD and robotics leads for articulation setup and joint decisions. Verify physics in the running simulator.</p><div class="count">{isaac_count} tagged references</div></div></section>
+<h2>Tagged sources</h2><div class="filterbar"><button class="active" data-filter="all">All</button><button data-filter="FLUX prompt">FLUX</button><button data-filter="Blender authoring">Blender</button><button data-filter="Isaac Sim handoff">Isaac Sim</button><button data-filter="Excluded from prompt">Excluded leads</button><span class="filter-count" id="count"></span></div><section class="grid">{''.join(cards)}</section>
+<p class="note">“Nimble: high/medium” and source-type labels are provider trust metadata. URLs are cited search leads, not independent verification. The lookalike results are tagged as inferred and excluded from the FLUX prompt.</p>
+<h2>FLUX prompt draft</h2><div class="prompt">{prompt}</div>
+<footer>Source map generated from the saved Nimble receipt · reference bytes remain local · FLUX submission is not automatic.</footer>
+</main><script>
+const buttons=[...document.querySelectorAll('[data-filter]')], cards=[...document.querySelectorAll('.source')], count=document.querySelector('#count');
+function filter(value){{let visible=0;for(const card of cards){{const show=value==='all'||card.dataset.use===value;card.hidden=!show;if(show)visible++;}}count.textContent=visible+' / '+cards.length+' sources';}}
+buttons.forEach(button=>button.addEventListener('click',()=>{{buttons.forEach(item=>item.classList.toggle('active',item===button));filter(button.dataset.filter);}}));filter('all');
+</script></body></html>"""
+
+
+def annotate_result(result: dict) -> dict:
+    references = tag_references(result.get("trust") or {})
+    result["tagged_references"] = references
+    result["flux_prompt_draft"] = create_flux_prompt(result.get("visual_description", ""), references)
+    return result
 
 
 def run(reference: Path, out: Path, api_key: str, model: str,
         host: str = "http://127.0.0.1:11434") -> dict:
     caption, vision_model = caption_image(reference, model, host)
     research = nimble_research(api_key, RESEARCH_BRIEF.format(caption=caption))
-    prompt = create_flux_prompt(caption, research["content"])
+    prompt = ""
     result = {
         "schema_version": 1,
         "provider": "Nimbleway Web Search Agents",
@@ -105,11 +245,13 @@ def run(reference: Path, out: Path, api_key: str, model: str,
         "nimble_request_id": research["request_id"],
         "research_brief": research["content"],
         "trust": research["trust"],
-        "flux_prompt_draft": prompt,
     }
+    annotate_result(result)
     out.mkdir(parents=True, exist_ok=True)
     (out / "nimble-research.json").write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
-    (out / "flux-prompt-draft.txt").write_text(prompt)
+    (out / "flux-prompt-draft.txt").write_text(result["flux_prompt_draft"])
+    report = render_reference_report(result, reference, out)
+    (out / "reference-map.html").write_text(report)
     return result
 
 
