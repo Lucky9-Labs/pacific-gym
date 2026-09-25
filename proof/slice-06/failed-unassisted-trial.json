@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "model": {
+    "tag": "hf.co/LiquidAI/LFM2-VL-3B-GGUF:Q4_K_M",
+    "digest": "34626e59be4b3a647f1f739759d0fbaa831b28adbf50346b2c74c13f7b50331a",
+    "capabilities": [
+      "completion",
+      "vision"
+    ]
+  },
+  "inputs": [
+    {
+      "role": "reference",
+      "path": "../../proof/slice-06/reference.png",
+      "sha256": "7caec20755ab4e9af1b1ea4f11aad4623c8fb9910156c994bcfca6dba8e9dba2"
+    },
+    {
+      "role": "candidate",
+      "path": "../../proof/slice-06/candidate.png",
+      "sha256": "7a5a2ae6a1204faee46a5b6113be46e80df609e99782c9bef8ea40c51b22e1ee"
+    }
+  ],
+  "prompt": "You are steering a 3D artist editing a static robot pose. Two images follow IN ORDER:\n1. Pinned reference pose.\n2. Candidate Blender render.\nThe orange foot is the robot's LEFT foot. The blue foot is its right foot. The ground label FORWARD > defines forward, which appears toward image-right. Compare the orange foot's HORIZONTAL position on the grid in both images. Ignore its vertical pixel position. Do not judge gait, animation, physics, or Isaac readiness.\nReturn ONLY a JSON object with exactly these fields:\n{\n  \"evidence\": \"one concise visible difference with direction and named part\",\n  \"confidence\": \"high|medium|low\",\n  \"next_action\": \"one short imperative MOVE command to Codex that tells it which foot to move and in which direction to match the reference\"\n}\nIf the images are indistinguishable or unclear, say so in evidence, set confidence low, and make next_action a request to inspect the renders. Otherwise do not ask Codex to compare, inspect, or confirm: give the edit command. No numerical score. No general advice.",
+  "raw_response": "{\n  \"evidence\": \"The orange foot in the candidate Blender render is positioned slightly to the right compared to its position in the pinned reference pose.\",\n  \"confidence\": \"high\",\n  \"next_action\": \"MOVE the orange foot to the right to match the position in the pinned reference pose.\"\n}",
+  "comparison": {
+    "evidence": "The orange foot in the candidate Blender render is positioned slightly to the right compared to its position in the pinned reference pose.",
+    "confidence": "high",
+    "next_action": "MOVE the orange foot to the right to match the position in the pinned reference pose."
+  },
+  "ollama": {
+    "version": "0.34.4",
+    "done_reason": "stop"
+  }
+}

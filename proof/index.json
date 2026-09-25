@@ -8,6 +8,12 @@
       "state": "local_checks_passed_runtime_install_pending",
       "proof": "proof/slice-01/proof.json",
       "acceptance_command": "sh scripts/accept-source-intake.sh"
+    },
+    {
+      "id": "06-liquid-comparison-pulse",
+      "state": "local_fixture_passed",
+      "proof": "proof/slice-06/proof.json",
+      "acceptance_command": "sh scripts/accept-comparison-pulse.sh"
     }
   ],
   "gpu_handoff": null

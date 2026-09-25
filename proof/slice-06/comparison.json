@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "model": {
+    "tag": "hf.co/LiquidAI/LFM2.5-VL-3B-GGUF:Q4_K_M",
+    "digest": "4e3daebe4fb42e458b26090e6b5e6b38d34ddd1ff9f0673565d83acb3a2c5682",
+    "capabilities": [
+      "tools",
+      "thinking",
+      "completion",
+      "vision"
+    ]
+  },
+  "inputs": [
+    {
+      "role": "reference",
+      "path": "../../proof/slice-06/reference.png",
+      "sha256": "7caec20755ab4e9af1b1ea4f11aad4623c8fb9910156c994bcfca6dba8e9dba2"
+    },
+    {
+      "role": "candidate",
+      "path": "../../proof/slice-06/candidate.png",
+      "sha256": "7a5a2ae6a1204faee46a5b6113be46e80df609e99782c9bef8ea40c51b22e1ee"
+    }
+  ],
+  "visual_pair": {
+    "path": "../../proof/slice-06/pair.png",
+    "sha256": "5581be532b4272b35082fe152a04096e9eb6fefed3588f8807ccf4062c302dcb"
+  },
+  "measurement": {
+    "reference_orange_center_x": 572.4307022995649,
+    "candidate_orange_center_x": 357.45339251743815,
+    "reference_orange_pixels": 1609,
+    "candidate_orange_pixels": 1577
+  },
+  "prompt": "You are steering a 3D artist editing a static robot pose. The ONE image has two vertically stacked panels with the SAME horizontal coordinate system: REFERENCE on top and CANDIDATE below.\nThe orange foot is the robot's LEFT foot. The blue foot is its right foot. The ground label FORWARD > defines forward, which appears toward image-right. Compare the orange foot's HORIZONTAL position on the grid in both images. Ignore its vertical pixel position. Do not judge gait, animation, physics, or Isaac readiness.\nMeasured from the orange pixels in the original Blender PNGs: REFERENCE foot horizontal center = 572.4px, CANDIDATE foot horizontal center = 357.5px, both in 900px wide images. These coordinates are evidence and take precedence over uncertain visual impressions. If reference x is larger, the candidate must move RIGHT/FORWARD. If reference x is smaller, the candidate must move LEFT/BACKWARD. Apply this rule before writing next_action.\nReturn ONLY a JSON object with exactly these fields:\n{\n  \"evidence\": \"state the REFERENCE and CANDIDATE orange left foot x coordinates above, then state which is farther right; ensure this agrees with next_action\",\n  \"confidence\": \"high|medium|low\",\n  \"next_action\": \"one short imperative command using the literal words MOVE THE LEFT FOOT CONTACT and the required direction FORWARD or BACKWARD\"\n}\nIf the images are indistinguishable or unclear, say so in evidence, set confidence low, and make next_action a request to inspect the renders. Otherwise do not ask Codex to compare, inspect, or confirm: give the edit command. No numerical score. No general advice.",
+  "raw_response": "{\n  \"evidence\": \"REFERENCE orange foot horizontal center = 572.4px, CANDIDATE orange foot horizontal center = 357.5px\",\n  \"confidence\": \"high\",\n  \"next_action\": \"MOVE THE LEFT FOOT CONTACT FORWARD\"\n}",
+  "comparison": {
+    "evidence": "REFERENCE orange foot horizontal center = 572.4px, CANDIDATE orange foot horizontal center = 357.5px",
+    "confidence": "high",
+    "next_action": "MOVE THE LEFT FOOT CONTACT FORWARD"
+  },
+  "ollama": {
+    "version": "0.34.4",
+    "done_reason": "stop"
+  }
+}
