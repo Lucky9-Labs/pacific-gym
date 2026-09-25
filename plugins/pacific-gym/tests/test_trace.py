@@ -58,6 +58,22 @@ class TraceTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "round-trip exactly"):
                 export_and_verify(trace, "rt_secret12345678")
 
+    def test_query_retries_until_insert_is_visible(self):
+        trace = specimen(ROOT, "73e424af-9d3a-4287-ac3f-9811b847b42a")
+        captured = {}
+
+        def delayed_request(method, url, key, body, database):
+            if "/v1/tables/" in url:
+                captured["row"] = body[0]
+                return "insert-123", {"inserted": 1}
+            captured["queries"] = captured.get("queries", 0) + 1
+            return "query-" + str(captured["queries"]), {"data": [] if captured["queries"] == 1 else [captured["row"]]}
+
+        with patch("pacific_gym.trace.request_json", side_effect=delayed_request), patch("pacific_gym.trace.time.sleep"):
+            result = export_and_verify(trace, "rt_secret12345678")
+        self.assertEqual(result["query_request_ids"], ["query-1", "query-2"])
+        self.assertEqual(result["row_count"], 1)
+
 
 if __name__ == "__main__":
     unittest.main()

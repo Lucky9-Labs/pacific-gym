@@ -11,7 +11,7 @@
     },
     {
       "id": "02-rawtree-traces",
-      "state": "local_checks_passed_live_export_blocked_missing_api_key",
+      "state": "live_round_trip_passed",
       "proof": "proof/slice-02/proof.json",
       "acceptance_command": "sh scripts/accept-rawtree-trace.sh"
     }

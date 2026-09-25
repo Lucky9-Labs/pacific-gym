@@ -1,3 +1,4 @@
 .pacific-gym/
+/.env
 __pycache__/
 *.pyc

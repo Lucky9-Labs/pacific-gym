@@ -66,7 +66,7 @@ def specimen(repo_root, run_id):
     return {
         "schema_version": 1,
         "run_id": run_id,
-        "environment": "sandbox",
+        "target_scope": "unverified",
         "source": "representative-replay-of-slice-01-inspection",
         "timing": {"replay_capture_started_at_unix_ns": start,
                    "replay_capture_ended_at_unix_ns": end,
@@ -138,10 +138,17 @@ def export_and_verify(trace, api_key, base_url=API_URL, database=None):
     if inserted.get("inserted") != 1:
         raise ValueError("RawTree did not confirm one inserted row")
     query_start = time.monotonic_ns()
-    query_request_id, queried = request_json("POST", base_url + "/v1/query",
-                                             api_key, {"sql": sql}, database)
+    query_request_ids = []
+    for delay in (0, 0.25, 0.5, 1, 2, 4):
+        if delay:
+            time.sleep(delay)
+        query_request_id, queried = request_json("POST", base_url + "/v1/query",
+                                                 api_key, {"sql": sql}, database)
+        query_request_ids.append(query_request_id)
+        rows = query_rows(queried)
+        if rows:
+            break
     query_ms = round((time.monotonic_ns() - query_start) / 1_000_000, 3)
-    rows = query_rows(queried)
     if len(rows) != 1 or not isinstance(rows[0], dict):
         raise ValueError(f"Expected one RawTree row for {run_id}; got {len(rows)}")
     returned = rows[0]
@@ -155,6 +162,6 @@ def export_and_verify(trace, api_key, base_url=API_URL, database=None):
     return {"status": "live_round_trip_passed", "run_id": run_id,
             "table": TABLE, "query": sql, "insert_request_id": insert_request_id,
             "query_request_id": query_request_id, "insert_duration_ms": insert_ms,
-            "query_duration_ms": query_ms, "trace_sha256": digest,
+            "query_request_ids": query_request_ids, "query_duration_ms": query_ms, "trace_sha256": digest,
             "row_count": 1, "returned_row": returned,
             "data_boundary": "Only redacted JSON text and artifact URI/SHA-256 references were transmitted; media bytes remained local."}
