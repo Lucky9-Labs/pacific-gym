@@ -65,3 +65,18 @@ work. Transfer only required run assets/configuration; do not copy the entire
 credential file to compute. `target-preflight` uses the executable environment
 settings as defaults when its explicit flags are omitted. Metadata never proves
 current availability, spend or shutdown; retain live validation and expiry checks.
+
+## Local runtime root
+
+This machine's authoritative plugin source is
+`/Users/lucky/Code/pacific-gym/plugins/pacific-gym`, with its primary checkout on
+`main`. The local marketplace installs from that checkout. Hook definitions use
+absolute script paths there and explicitly set `PLUGIN_ROOT`; runtime imports
+therefore survive replacement of Codex's versioned install cache. CLI module
+startup also redirects to the primary checkout when it exists, and refuses to
+use it if it is not on `main`. Task cwd and run output paths are preserved.
+
+Pulling main updates runtime code. Changes to hook definitions or registered
+skill metadata still require refreshing the installation and reviewing hook
+trust in Codex; this does not bypass trust. Do not reinstall from feature
+worktrees. On remote hosts without the local path, CLI uses the supplied package.

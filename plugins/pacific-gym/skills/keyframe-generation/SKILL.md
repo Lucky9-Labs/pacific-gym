@@ -57,3 +57,13 @@ After a successful `publish-candidate-frame` CLI call, the PostToolUse hook runs
 ## Environment discovery
 
 Before reporting missing credentials or GPU configuration, invoke the installed CLI from the workspace; it automatically links a missing worktree `.env` to the primary checkout. Run `python3 -m pacific_gym host-config` for the existing GPU connection and executable paths. Follow the installed README for access, then verify the host live. Never print API keys or treat connection metadata as a passed runtime check.
+
+## Local main checkout is authoritative
+
+On this Mac, always read the current skill and plugin documentation from
+`/Users/lucky/Code/pacific-gym/plugins/pacific-gym` on `main`. Use that directory
+as `PYTHONPATH` for CLI calls. Local hook commands also target that stable path
+and set `PLUGIN_ROOT` to it. Keep the task working directory unchanged so run
+artifacts remain in the task workspace. Do not install from feature worktrees.
+Codex may cache skill metadata; the main-checkout skill is the current workflow.
+Remote machines without this Mac path use their supplied plugin package.
