@@ -10,10 +10,12 @@ Strokah is the first fixture. The versioned source packet at `s3://mech-art-libr
 
 - The repo marketplace installs `plugins/pacific-gym`, whose Codex skill guides source inspection, visual reference generation, Blender repairs, and the final GPU goal.
 - Local command tools expose repeatable `inspect`, `trace`, `generate-video`, `keyframes`, `blender-derive`, `compare`, `validate-usd`, and `promote` steps. Each produces machine-readable results and one documented acceptance command.
-- A trusted `PostToolUse` hook observes candidate-producing batches while a Pacific Gym run is active. It invokes the local Liquid VLM against pinned reference frames, returns concise feedback to Codex, and writes a trace. It never changes the source asset.
+- The planned trusted `PostToolUse` hook will observe candidate-producing batches while a Pacific Gym run is active, invoke the local Liquid VLM against pinned reference frames, return concise feedback to Codex, and write a trace. The current package has only a `SessionStart` install check; `compare` is a manual command and does not auto-steer.
 - RawTree stores full textual run traces and metadata after credential redaction. Large media lives in the versioned artifact package, with URI and hash in the trace.
 
 ## Reference and repair loop
+
+Use Liquid AI's official `hf.co/LiquidAI/LFM2.5-VL-3B-GGUF:Q4_K_M` in local Ollama for the initial comparison pulse. Record the resolved digest in each run; `proof/slice-06/proof.json` pins the tested digest. The controlled fixture also measures the orange foot contact in the rendered PNGs because an unassisted VLM trial reversed the spatial direction. Do not treat that fixture proof as a general gait comparison.
 
 Render the immutable source from useful views. FLUX 3 Video produces the first gait visual from those images and the style prompt. Once reviewed, the video becomes the motion target. ffmpeg sampling and local VLM labels create a permanent timestamped keyframe reference. Local Blender exercises prove the repair tooling; production GLB authoring begins on the target machine from the pinned references. USD layers add robot links, joints, collision, mass, inertia, and drives. Visual comparison directs iteration; structural checks and Isaac Sim runtime proof decide physics acceptance.
 

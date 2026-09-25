@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "slice": "liquid-comparison-pulse",
+  "status": "local_fixture_passed",
+  "scope": "controlled static Blender pose only; no gait or physics claim",
+  "acceptance_command": "sh scripts/accept-comparison-pulse.sh",
+  "model": {
+    "tag": "hf.co/LiquidAI/LFM2.5-VL-3B-GGUF:Q4_K_M",
+    "digest": "4e3daebe4fb42e458b26090e6b5e6b38d34ddd1ff9f0673565d83acb3a2c5682",
+    "capabilities": [
+      "tools",
+      "thinking",
+      "completion",
+      "vision"
+    ]
+  },
+  "ollama": {
+    "version": "0.34.4",
+    "done_reason": "stop"
+  },
+  "blender_version": "5.2.1 LTS",
+  "model_source": "https://huggingface.co/LiquidAI/LFM2.5-VL-3B-GGUF",
+  "fixture": "proof/slice-06/fixture.json",
+  "inputs": [
+    {
+      "role": "reference",
+      "path": "../../proof/slice-06/reference.png",
+      "sha256": "7caec20755ab4e9af1b1ea4f11aad4623c8fb9910156c994bcfca6dba8e9dba2"
+    },
+    {
+      "role": "candidate",
+      "path": "../../proof/slice-06/candidate.png",
+      "sha256": "7a5a2ae6a1204faee46a5b6113be46e80df609e99782c9bef8ea40c51b22e1ee"
+    }
+  ],
+  "visual_pair": {
+    "path": "../../proof/slice-06/pair.png",
+    "sha256": "5581be532b4272b35082fe152a04096e9eb6fefed3588f8807ccf4062c302dcb"
+  },
+  "comparison_report": "proof/slice-06/comparison.json",
+  "comparison_report_sha256": "a4e172d65a5fc353f313cf99548ec7e481ade39839e139a54691a3727c9207ca",
+  "observed": {
+    "evidence": "REFERENCE orange foot horizontal center = 572.4px, CANDIDATE orange foot horizontal center = 357.5px",
+    "confidence": "high",
+    "next_action": "MOVE THE LEFT FOOT CONTACT FORWARD"
+  },
+  "measurement": {
+    "reference_orange_center_x": 572.4307022995649,
+    "candidate_orange_center_x": 357.45339251743815,
+    "reference_orange_pixels": 1609,
+    "candidate_orange_pixels": 1577
+  },
+  "limitations": [
+    "Synthetic static pose, not a pinned FLUX gait keyframe",
+    "Orange contact pixel measurement anchors the VLM because unassisted trials reversed spatial direction",
+    "No automatic Blender edit, RawTree trace, Isaac Sim validation, or publication"
+  ],
+  "vision_smoke": {
+    "report": "proof/slice-06/vision-smoke.json",
+    "sha256": "f03a92a2dd0871710c8a8bcc8ffbcf835fc2c6f9504d50f9e69902f415ca2b87",
+    "result": "Orange"
+  }
+}
