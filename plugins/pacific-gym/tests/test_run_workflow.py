@@ -38,6 +38,59 @@ class RunWorkflowTest(unittest.TestCase):
         other.mkdir()
         self.assertIsNone(run.for_workspace(other))
 
+    def test_reference_research_job_is_saved_and_later_steers_tagged_handoff(self):
+        import pacific_gym.nimble_research as research
+
+        vision = {"tag": "local-test-model", "digest": "sha256:test"}
+        job = {"run_id": "nimble-run", "agent_id": "nimble-agent", "status": "queued",
+               "is_active": True}
+        completed = {
+            "status": "completed", "is_active": False, "request_id": "request-1",
+            "content": "Use articulation docs for joint setup.",
+            "trust": {"sources": [{"title": "Isaac Sim articulation",
+                                    "url": "https://docs.nvidia.com/isaacsim/articulation"}],
+                      "claims": []},
+        }
+        with patch.object(research, "caption_image", return_value=("A neutral articulated figure", vision)), \
+                patch.object(research, "start_nimble_job", return_value=job), \
+                patch.object(research, "poll_nimble_job", return_value=completed):
+            started = research.start_run_research(self.manifest, "test-key", "local-test-model")
+            self.assertEqual(started["status"], "running")
+            self.assertEqual(run.load(self.manifest)["reference_research"]["job"]["run_id"], "nimble-run")
+            finished = research.poll_run_research(self.manifest, "test-key")
+
+        self.assertEqual(finished["status"], "complete")
+        self.assertEqual(finished["source_count"], 1)
+        receipt = json.loads(Path(finished["receipt"]).read_text())
+        self.assertFalse(receipt["input"]["media_sent_to_nimble"])
+        self.assertEqual(receipt["tagged_references"][0]["used_by"], "Isaac Sim handoff")
+        self.assertTrue(Path(finished["flux_prompt"]).is_file())
+        self.assertTrue(Path(finished["reference_map"]).is_file())
+        self.assertIn("cultural-industrial-references", run.goal_text(run.load(self.manifest)))
+
+    def test_nimble_key_loader_reads_only_the_named_workspace_setting(self):
+        import pacific_gym.nimble_research as research
+
+        (self.workspace / ".env").write_text("OTHER_SETTING=preserved\nNIMBLE_API_KEY='test-key-value'\n")
+        with patch.dict(os.environ, {"NIMBLE_API_KEY": ""}):
+            self.assertEqual(research.configured_key(self.workspace), "test-key-value")
+        with patch.dict(os.environ, {"NIMBLE_API_KEY": "environment-key"}):
+            self.assertEqual(research.configured_key(self.workspace), "environment-key")
+
+    def test_reference_tags_require_a_domain_boundary_for_official_hosts(self):
+        import pacific_gym.nimble_research as research
+
+        refs = research.tag_references({"sources": [
+            {"title": "Artist guide", "url": "https://docs.blender.org/manual"},
+            {"title": "Artist guide", "url": "https://blender.org.attacker.example/manual"},
+            {"title": "Engineering guide", "url": "https://docs.nvidia.com/isaac"},
+            {"title": "Engineering guide", "url": "https://nvidia.com.attacker.example/isaac"},
+        ], "claims": []})
+        self.assertEqual(refs[0]["used_by"], "Blender authoring")
+        self.assertEqual(refs[1]["used_by"], "Review before use")
+        self.assertEqual(refs[2]["used_by"], "Isaac Sim handoff")
+        self.assertEqual(refs[3]["used_by"], "Review before use")
+
     def test_manifest_load_normalizes_a_symlink_alias_to_its_resolved_path(self):
         resolved_workspace = self.workspace.resolve()
         alias_root = resolved_workspace / "mount-alias"
@@ -76,6 +129,18 @@ class RunWorkflowTest(unittest.TestCase):
         output = json.loads(result.stdout)
         self.assertEqual(output["hookSpecificOutput"]["hookEventName"], "SessionStart")
         self.assertIn(run.load(self.manifest)["run_id"], output["hookSpecificOutput"]["additionalContext"])
+
+    def test_reference_research_hook_injects_skill_and_credential_path(self):
+        event = json.dumps({"cwd": str(self.workspace), "source": "startup"})
+        env = {key: value for key, value in os.environ.items() if key != "NIMBLE_API_KEY"}
+        env["PLUGIN_ROOT"] = str(PLUGIN)
+        result = subprocess.run([sys.executable, str(PLUGIN / "hooks" / "reference_research.py")],
+                                input=event, capture_output=True, text=True, env=env, check=True)
+        context = json.loads(result.stdout)["hookSpecificOutput"]["additionalContext"]
+        self.assertIn("cultural-industrial-references", context)
+        self.assertIn("run-research-start", context)
+        self.assertEqual(run.load(self.manifest)["reference_research"]["status"],
+                         "waiting_for_credentials")
 
     def test_stop_guard_continues_instead_of_claiming_incomplete_run(self):
         event = json.dumps({"cwd": str(self.workspace)})

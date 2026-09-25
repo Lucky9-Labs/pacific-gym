@@ -7,6 +7,8 @@ description: Prepare an immutable, hash-tracked 3D derivative for Isaac Sim and 
 
 Read `docs/PLAN.md` and `docs/ARCHITECTURE.md` before starting. Treat attached files as immutable inputs. Keep every derivative, receipt, and proof artifact under `.pacific-gym/runs/<run-id>/`; never write over an input or a tracked source asset.
 
+Use the separate `cultural-industrial-references` skill for image-based artist, animation, and industry research. `run-start` initializes research state and starts Nimble when `NIMBLE_API_KEY` is available from the process environment or workspace `.env`. The dedicated SessionStart research hook starts a waiting job when the key is configured; otherwise it directs Astra to the research skill. The long-running Goal polls and reads the tagged receipt before downstream authoring checkpoints.
+
 ## Use these services and tools
 
 - Use the bundled Black Forest Labs `flux` MCP only when a new or replacement visual motion reference is requested. Discover its current video-generation tool and arguments from the server. Record the request, settings, returned video, and SHA-256 in the active run. For animation authoring and timestamped review, hand off to `keyframe-generation`.
@@ -38,6 +40,8 @@ python3 -m pacific_gym inspect --spec fixtures/strokah-source.json --out .pacifi
 ```
 
 The inspection must distinguish the static visual asset from the unanimated mechanical rig reference. Do not infer shared bindings from names. Do not request or infer a premade gait asset: FLUX supplies visual gait direction before production motion authoring. If a new gait visual is needed, use the bundled BFL MCP and pass its pinned result to `keyframe-generation` for sampling and animation review.
+
+For one-off research outside a run, `nimble-research --reference <image> --out <directory>` remains available. It captions locally with Ollama and sends only the text description to Nimble. For run-bound work, use `cultural-industrial-references` so the asynchronous job state and tagged source handoff remain attached to the run.
 
 ## Candidate feedback
 For the local static comparison pulse, use Liquid AI's official Ollama model `hf.co/LiquidAI/LFM2.5-VL-3B-GGUF:Q4_K_M`. Check its resolved digest against `proof/slice-06/proof.json` and run `sh scripts/accept-comparison-pulse.sh` from the repository root.
