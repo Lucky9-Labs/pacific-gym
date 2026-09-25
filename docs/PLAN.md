@@ -6,7 +6,7 @@ Build the plugin in sequential feature worktrees. Before each worktree, fetch `o
 
 A passing output is promoted only after its exact hash and immutable S3 VersionId are recorded in a run manifest. Downstream slices and the GPU agent consume those bytes. Failed experiments remain in run traces but do not become inputs.
 
-The local vision comparison pulse uses Liquid AI's official `hf.co/LiquidAI/LFM2.5-VL-3B-GGUF:Q4_K_M` through Ollama. Pin the resolved model digest in each proof record; the tested digest for the controlled fixture is `4e3daebe4fb42e458b26090e6b5e6b38d34ddd1ff9f0673565d83acb3a2c5682`. The tag alone can move. The plugin now compares only explicitly recorded candidate renders against pinned reference PNGs; this is visual feedback and not a gait or physics gate.
+The local vision comparison pulse uses Liquid AI's official `hf.co/LiquidAI/LFM2.5-VL-3B-GGUF:Q4_K_M` through Ollama. Pin the resolved model digest in each proof record; the tested digest for the controlled fixture is `4e3daebe4fb42e458b26090e6b5e6b38d34ddd1ff9f0673565d83acb3a2c5682`. The tag alone can move. The static pulse is manual. An explicit pair watcher waits for timestamp-matched FLUX/Blender frames, and the installed `PostToolUse` hook compares only explicitly recorded candidate renders against pinned reference PNGs. Both provide advisory visual feedback, not a gait or physics gate.
 
 ## Slices
 

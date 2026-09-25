@@ -32,6 +32,9 @@ python3 -m pacific_gym inspect --spec fixtures/strokah-source.json --out .pacifi
 The inspection must distinguish the static visual asset from the unanimated mechanical rig reference. Do not infer shared bindings from names. Do not request or infer a premade gait asset: FLUX supplies visual gait direction before production motion authoring.
 
 ## Candidate feedback
+For the local static comparison pulse, use Liquid AI's official Ollama model `hf.co/LiquidAI/LFM2.5-VL-3B-GGUF:Q4_K_M`. Check its resolved digest against `proof/slice-06/proof.json` and run `sh scripts/accept-comparison-pulse.sh` from the repository root.
+
+For animation review, render Blender candidate PNGs at the sample timestamps in the pinned FLUX frame manifest. After each render is complete, run `python3 -m pacific_gym publish-candidate-frame` with the exact frame ID and timestamp, then run `python3 -m pacific_gym judge-keyframes` with the reference manifest, candidate directory, and run-local result directory. The watcher calls Ollama only for complete hash-verified pairs with matching IDs, timestamps, and dimensions. Its visual result is advisory; it does not prove gait or physics. The separate `PostToolUse` hook compares explicit `candidate-add` renders against pinned run frames. See the repository README for command examples.
 
 Record each candidate PNG after a render or candidate-producing batch:
 

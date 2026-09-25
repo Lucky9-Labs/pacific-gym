@@ -1,0 +1,25 @@
+{
+  "acceptance_command": "sh scripts/accept-rawtree-trace.sh",
+  "data_boundary": "Only redacted JSON text and artifact URI/SHA-256 references were transmitted; media bytes remained local.",
+  "evidence_source": "representative replay of proof/slice-01/inspect.json",
+  "insert_duration_ms": 861.394,
+  "insert_request_id": "306ae7f9-0236-479d-b0b3-ee3c186e3eee",
+  "query": "SELECT run_id, trace_json, trace_sha256 FROM pacific_gym_development_traces WHERE run_id = '3b0ca1ec-1d25-4570-a096-631b2ee381e9' LIMIT 2",
+  "query_duration_ms": 140.394,
+  "query_request_id": "365c5c60-f9cc-495c-9caf-de2d53fc9e51",
+  "query_request_ids": [
+    "365c5c60-f9cc-495c-9caf-de2d53fc9e51"
+  ],
+  "returned_row": {
+    "run_id": "3b0ca1ec-1d25-4570-a096-631b2ee381e9",
+    "trace_json": "{\"artifacts\":[{\"media_bytes_exported\":false,\"sha256\":\"ca48ae748f575b88f1a6f746f85c2e2e1c4fbbd76190032a95072de9c84c39c8\",\"uri\":\"repo://proof/slice-01/inspect.json\"},{\"media_bytes_exported\":false,\"sha256\":\"5b6bdf3964106e546fd582196aa9ec1b684952c503b9dc22cde51713ef9b8e9f\",\"uri\":\"repo://plugins/pacific-gym/fixtures/strokah-source.json\"},{\"media_bytes_exported\":false,\"sha256\":\"65c6ef7de40c529c75c82dad8ab0f5ac13638882b1ef1eddee9a49a89ee42af1\",\"uri\":\"s3://mech-art-library-20260905225047699700000001/models/mechs/strokah-skeleton/isaacsim-source/v1/strokah-gameplay-lod0.glb?versionId=Bqdb5ye7bhjfF5p9GfliwOhpEpeTgCZL\"},{\"media_bytes_exported\":false,\"sha256\":\"4f8bdb1d15ed6d164f1d8fa2aca63c11884f7019ed892f2862c61d5245135506\",\"uri\":\"s3://mech-art-library-20260905225047699700000001/models/mechs/strokah-skeleton/isaacsim-source/v1/strokah-mech-static-rig.glb?versionId=ogQqgs1P9Hs8QZCxLHXGelUlp7kbDqad\"}],\"events\":[{\"kind\":\"prompt\",\"sequence\":1,\"text\":\"Inspect the immutable Strokah visual LOD0 and mechanical rig reference; report structure and hashes.\"},{\"input\":{\"out\":\".pacific-gym/inspect.json\",\"spec\":{\"asset_id\":\"strokah\",\"assets\":[{\"role\":\"visual_lod0\",\"sha256\":\"65c6ef7de40c529c75c82dad8ab0f5ac13638882b1ef1eddee9a49a89ee42af1\",\"uri\":\"s3://mech-art-library-20260905225047699700000001/models/mechs/strokah-skeleton/isaacsim-source/v1/strokah-gameplay-lod0.glb?versionId=Bqdb5ye7bhjfF5p9GfliwOhpEpeTgCZL\"},{\"role\":\"rig_reference\",\"sha256\":\"4f8bdb1d15ed6d164f1d8fa2aca63c11884f7019ed892f2862c61d5245135506\",\"uri\":\"s3://mech-art-library-20260905225047699700000001/models/mechs/strokah-skeleton/isaacsim-source/v1/strokah-mech-static-rig.glb?versionId=ogQqgs1P9Hs8QZCxLHXGelUlp7kbDqad\"}],\"schema_version\":1}},\"kind\":\"tool_call\",\"sequence\":2,\"tool\":\"pacific-gym inspect\"},{\"kind\":\"tool_result\",\"output\":{\"asset_id\":\"strokah\",\"assets\":[{\"bytes\":2742264,\"role\":\"visual_lod0\",\"sha256\":\"65c6ef7de40c529c75c82dad8ab0f5ac13638882b1ef1eddee9a49a89ee42af1\",\"structure\":{\"animations\":[],\"mesh_nodes\":79,\"meshes\":79,\"nodes\":80,\"rigid_parented_mesh_nodes\":79,\"skinned_mesh_nodes\":0,\"skins\":[],\"weighted_primitives\":0},\"uri\":\"s3://mech-art-library-20260905225047699700000001/models/mechs/strokah-skeleton/isaacsim-source/v1/strokah-gameplay-lod0.glb?versionId=Bqdb5ye7bhjfF5p9GfliwOhpEpeTgCZL\"},{\"bytes\":6746020,\"role\":\"rig_reference\",\"sha256\":\"4f8bdb1d15ed6d164f1d8fa2aca63c11884f7019ed892f2862c61d5245135506\",\"structure\":{\"animations\":[],\"mesh_nodes\":90,\"meshes\":90,\"nodes\":174,\"rigid_parented_mesh_nodes\":90,\"skinned_mesh_nodes\":0,\"skins\":[{\"joints\":62,\"name\":\"Strokah_MechanicalRig\"}],\"weighted_primitives\":0},\"uri\":\"s3://mech-art-library-20260905225047699700000001/models/mechs/strokah-skeleton/isaacsim-source/v1/strokah-mech-static-rig.glb?versionId=ogQqgs1P9Hs8QZCxLHXGelUlp7kbDqad\"}],\"schema_version\":1,\"tool_version\":\"0.1.0\"},\"sequence\":3,\"status\":\"ok\",\"tool\":\"pacific-gym inspect\"},{\"kind\":\"decision\",\"outcome\":\"source_intake_passed\",\"reason\":\"LOD0 is static; the separate rig reference has 62 joints and no animation. No rig equivalence is inferred.\",\"sequence\":4}],\"run_id\":\"3b0ca1ec-1d25-4570-a096-631b2ee381e9\",\"schema_version\":1,\"source\":\"representative-replay-of-slice-01-inspection\",\"target_scope\":\"unverified\",\"timing\":{\"original_inspection_duration_ms\":null,\"replay_capture_duration_ms\":0.0,\"replay_capture_ended_at_unix_ns\":1790362795469911000,\"replay_capture_started_at_unix_ns\":1790362795469911000}}",
+    "trace_sha256": "6b1b7c61481a8095004593668c1929c437cc8fc6b89082aaa57b40a52e3257d4"
+  },
+  "row_count": 1,
+  "run_id": "3b0ca1ec-1d25-4570-a096-631b2ee381e9",
+  "schema_version": 1,
+  "slice": "rawtree-traces",
+  "status": "live_round_trip_passed",
+  "table": "pacific_gym_development_traces",
+  "trace_sha256": "6b1b7c61481a8095004593668c1929c437cc8fc6b89082aaa57b40a52e3257d4"
+}

@@ -12,7 +12,8 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 from . import __version__
-from .trace import TABLE, canonical, export_and_verify, known_secrets, redact, specimen, sql_for_run
+from .trace import (TABLE, canonical, cleanup_verification_rows, export_and_verify,
+                    known_secrets, redact, specimen, sql_for_run)
 
 
 def sha256(path: Path) -> str:
@@ -124,6 +125,20 @@ def main() -> int:
     comparison.add_argument("--pair-out", type=Path)
     comparison.add_argument("--model", default="hf.co/LiquidAI/LFM2.5-VL-3B-GGUF:Q4_K_M")
     comparison.add_argument("--host", default="http://127.0.0.1:11434")
+    publish_frame = sub.add_parser("publish-candidate-frame", help="Mark a completed Blender PNG as a timestamped candidate frame")
+    publish_frame.add_argument("--reference-manifest", type=Path, required=True)
+    publish_frame.add_argument("--candidate-dir", type=Path, required=True)
+    publish_frame.add_argument("--frame-id", required=True)
+    publish_frame.add_argument("--timestamp", type=float, required=True)
+    publish_frame.add_argument("--image", type=Path, required=True)
+    judge_frames = sub.add_parser("judge-keyframes", help="Watch for exact FLUX-reference/Blender-candidate pairs and judge them locally")
+    judge_frames.add_argument("--reference-manifest", type=Path, required=True)
+    judge_frames.add_argument("--candidate-dir", type=Path, required=True)
+    judge_frames.add_argument("--out-dir", type=Path, required=True)
+    judge_frames.add_argument("--model", default="hf.co/LiquidAI/LFM2.5-VL-3B-GGUF:Q4_K_M")
+    judge_frames.add_argument("--host", default="http://127.0.0.1:11434")
+    judge_frames.add_argument("--interval", type=float, default=0.5)
+    judge_frames.add_argument("--once", action="store_true", help="scan once; never infer for missing, incomplete, or mismatched pairs")
     trace_command = sub.add_parser("trace", help="Export a redacted development trace and verify RawTree read-back")
     trace_command.add_argument("--repo-root", type=Path, required=True)
     trace_command.add_argument("--out", type=Path, required=True)
@@ -172,21 +187,47 @@ def main() -> int:
         args.out.parent.mkdir(parents=True, exist_ok=True)
         args.out.write_text(json.dumps(result, indent=2) + "\n")
         print(json.dumps(result["comparison"], indent=2))
+    elif args.command == "publish-candidate-frame":
+        from .keyframe_judge import publish_cli
+        return publish_cli(args)
+    elif args.command == "judge-keyframes":
+        from .keyframe_judge import watch_cli
+        return watch_cli(args)
     elif args.command == "trace":
-        trace = specimen(args.repo_root, str(uuid.uuid4()))
+        session_id = os.environ.get("CODEX_SESSION_ID", "")
+        thread_id = os.environ.get("CODEX_THREAD_ID", "")
+        if not session_id or not thread_id:
+            raise RuntimeError("CODEX_SESSION_ID and CODEX_THREAD_ID are required to identify the running Codex agent")
+        trace = specimen(args.repo_root, str(uuid.uuid4()), session_id, thread_id)
         safe = redact(trace, known_secrets())
         key = args.api_key_file.read_text().strip() if args.api_key_file else os.environ.get("RAWTREE_API_KEY", "")
         if key:
-            result = export_and_verify(trace, key, database=args.database)
+            try:
+                result = export_and_verify(trace, key, database=args.database)
+                result["cleanup"] = cleanup_verification_rows(key, result["run_id"], database=args.database)
+                if result["cleanup"]["status"] != "verification_rows_removed":
+                    result["status"] = "live_round_trip_cleanup_unavailable"
+            except Exception as error:
+                result = {
+                    "status": "live_round_trip_failed",
+                    "run_id": safe[0]["run_id"],
+                    "table": TABLE,
+                    "query": sql_for_run(safe[0]["run_id"]),
+                    "row_count": None,
+                    "inserted_rows_may_remain": True,
+                    "error": redact(str(error), [*known_secrets(), key]),
+                    "cleanup": cleanup_verification_rows(key, safe[0]["run_id"], database=args.database),
+                }
         else:
             result = {
-                "status": "blocked_missing_rawtree_api_key", "run_id": safe["run_id"],
+                "status": "blocked_missing_rawtree_api_key", "run_id": safe[0]["run_id"],
                 "table": TABLE, "insert_request_id": None,
-                "query_request_id": None, "query": sql_for_run(safe["run_id"]), "returned_row": None,
+                "query_request_id": None, "query": sql_for_run(safe[0]["run_id"]), "returned_rows": [],
                 "trace_sha256": hashlib.sha256(canonical(safe).encode()).hexdigest(),
                 "row_count": 0,
-                "local_checks": ["complete representative trace", "recursive credential redaction",
-                                 "canonical JSON serialization", "strict query response comparison"],
+                "local_checks": ["complete representative event rows", "Codex session and thread identifiers",
+                                 "recursive credential redaction", "canonical JSON serialization",
+                                 "strict query response comparison"],
                 "data_boundary": "Local redaction and serialization only; nothing was transmitted to RawTree.",
             }
         result.update({
