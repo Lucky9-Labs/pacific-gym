@@ -183,6 +183,46 @@ class RunWorkflowTest(unittest.TestCase):
             self.assertEqual(post_tool_use.main(), 0)
         self.assertEqual(stdout.getvalue(), "")
 
+    def test_post_tool_use_scans_and_receipts_successful_keyframe_publish(self):
+        sys.path.insert(0, str(PLUGIN / "hooks"))
+        import post_tool_use
+        sys.path.remove(str(PLUGIN / "hooks"))
+
+        candidate_dir = self.workspace / "keyframes"
+        candidate_dir.mkdir()
+        sidecar = candidate_dir / "frame-001.json"
+        sidecar.write_text(json.dumps({"complete": True, "frame_id": "frame-001"}))
+        reference_manifest = self.workspace / "references" / "manifest.json"
+        command = ("python3 -m pacific_gym publish-candidate-frame "
+                   f"--reference-manifest {reference_manifest} --candidate-dir {candidate_dir} "
+                   "--frame-id frame-001 --timestamp 0 --image "
+                   f"{candidate_dir / 'frame-001.png'} && echo published")
+        event = {
+            "cwd": str(self.workspace), "tool_name": "Bash",
+            "tool_input": {"command": command},
+            "tool_response": {"content": [{"type": "text", "text": json.dumps({"published_sidecar": str(sidecar)})}]},
+        }
+        scan = {"status": "scan_complete", "judge_results_emitted": 0,
+                "completed_pair_judgments": 0, "pairs_waiting": 1,
+                "batch_ready": False, "result_directory": str(self.workspace / "keyframe-judgments")}
+        stdout = io.StringIO()
+        with patch.object(sys, "stdin", io.StringIO(json.dumps(event))), patch("sys.stdout", stdout), \
+                patch("pacific_gym.keyframe_judge.run_judge", return_value=scan) as judge:
+            self.assertEqual(post_tool_use.main(), 0)
+        judge.assert_called_once()
+        emitted = json.loads(stdout.getvalue())
+        context = emitted["hookSpecificOutput"]["additionalContext"]
+        self.assertIn("ran automatically after publish", context)
+        receipt_path = self.workspace / "receipts" / "keyframe-hooks" / "frame-001.json"
+        receipt = json.loads(receipt_path.read_text())
+        self.assertEqual(receipt["trigger"], "PostToolUse")
+        self.assertEqual(receipt["scan"]["pairs_waiting"], 1)
+
+        sidecar.write_text(json.dumps({"complete": False, "frame_id": "frame-001"}))
+        with patch.object(post_tool_use, "_compare_published_keyframe",
+                          side_effect=AssertionError("incomplete publish must not trigger")):
+            self.assertIsNone(post_tool_use._published_keyframe(command, json.dumps({"published_sidecar": str(sidecar)})))
+
     def test_isaac_adapter_receipt_must_prove_hashed_video_and_walking(self):
         usd = self.workspace / "robot.usda"
         usd.write_text("#usda 1.0\n")
