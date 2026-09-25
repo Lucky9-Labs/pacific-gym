@@ -112,6 +112,26 @@ class KeyframeJudgeTest(unittest.TestCase):
         self.assertEqual(len(sent["messages"][0]["images"]), 1)
         self.assertTrue((self.result_dir / "frame-001-pair.png").is_file())
 
+    def test_incomplete_liquid_json_retries_with_larger_output_budget(self):
+        valid = {"verdict": "partial", "evidence": "The torso aligns; one leg differs.",
+                 "discrepancies": ["The near knee is more extended."],
+                 "next_steer": "Bend the near knee slightly.", "confidence": "medium"}
+        responses = [
+            {"message": {"content": '{"verdict":"partial","evidence":"The torso'}},
+            {"message": {"content": json.dumps(valid)}, "done_reason": "stop"},
+        ]
+        budgets = []
+        def post_response(_url, body, timeout=300):
+            budgets.append(body["options"]["num_predict"])
+            return responses.pop(0)
+        with patch("pacific_gym.keyframe_judge.post_json", side_effect=post_response) as post:
+            result = judge_pair(self.ref, {"path": self.candidate,
+                                "sha256": hashlib.sha256(self.candidate.read_bytes()).hexdigest()},
+                                self.result_dir, "test-model", "http://local", {"tag": "test-model"})
+        self.assertEqual(result["judge"], valid)
+        self.assertEqual(post.call_count, 2)
+        self.assertEqual(budgets, [768, 1536])
+
     def test_existing_judgment_cannot_be_reused_for_a_changed_candidate(self):
         publish_candidate(self.manifest, self.candidate_dir, "frame-001", 0.5, self.candidate)
         candidate = ready_candidate(self.ref, self.candidate_dir)

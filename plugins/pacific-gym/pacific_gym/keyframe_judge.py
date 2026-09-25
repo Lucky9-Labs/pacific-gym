@@ -34,6 +34,26 @@ ambiguous, use verdict "uncertain" and say why. Return only JSON with exactly:
 {"verdict":"match|partial|mismatch|uncertain","evidence":"specific visible comparison","discrepancies":["..."],"next_steer":"one concise Blender animation edit instruction or inspect request","confidence":"high|medium|low"}
 No numeric score. Do not claim that one image is walking or stable by itself."""
 
+JUDGE_FIELDS = {"verdict", "evidence", "discrepancies", "next_steer", "confidence"}
+
+
+def _parse_judge_response(response: dict) -> dict:
+    content = response.get("message", {}).get("content", "")
+    parsed = json.loads(content)
+    if not isinstance(parsed, dict) or set(parsed) != JUDGE_FIELDS:
+        raise ValueError(f"Unexpected paired-judge fields: {list(parsed) if isinstance(parsed, dict) else type(parsed).__name__}")
+    if parsed["verdict"] not in {"match", "partial", "mismatch", "uncertain"}:
+        raise ValueError("Invalid paired-judge verdict")
+    if parsed["confidence"] not in {"high", "medium", "low"}:
+        raise ValueError("Invalid paired-judge confidence")
+    if not isinstance(parsed["evidence"], str) or not parsed["evidence"].strip():
+        raise ValueError("Paired-judge evidence must be non-empty text")
+    if not isinstance(parsed["discrepancies"], list) or any(not isinstance(x, str) for x in parsed["discrepancies"]):
+        raise ValueError("Paired-judge discrepancies must be a list of strings")
+    if not isinstance(parsed["next_steer"], str) or not parsed["next_steer"].strip():
+        raise ValueError("Paired-judge next_steer must be non-empty text")
+    return parsed
+
 
 def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
@@ -202,25 +222,28 @@ def judge_pair(ref: dict, candidate: dict, out_dir: Path, model: str, host: str,
     result_path = out_dir / f"{ref['frame_id']}.json"
     pair_path = out_dir / f"{ref['frame_id']}-pair.png"
     pair_bytes = _make_pair(ref["path"], candidate["path"], pair_path)
-    response = post_json(f"{host.rstrip('/')}/api/chat", {
+    request = {
         "model": model, "stream": False, "format": "json",
-        "options": {"temperature": 0, "num_ctx": 8192, "num_predict": 350},
+        "options": {"temperature": 0, "num_ctx": 8192, "num_predict": 768},
         "messages": [{"role": "user", "content": PROMPT,
                       "images": [base64.b64encode(pair_bytes).decode("ascii")]}],
-    }, timeout=300)
-    parsed = json.loads(response.get("message", {}).get("content", ""))
-    if set(parsed) != {"verdict", "evidence", "discrepancies", "next_steer", "confidence"}:
-        raise ValueError(f"Unexpected paired-judge fields: {list(parsed)}")
-    if parsed["verdict"] not in {"match", "partial", "mismatch", "uncertain"}:
-        raise ValueError("Invalid paired-judge verdict")
-    if parsed["confidence"] not in {"high", "medium", "low"}:
-        raise ValueError("Invalid paired-judge confidence")
-    if not isinstance(parsed["evidence"], str) or not parsed["evidence"].strip():
-        raise ValueError("Paired-judge evidence must be non-empty text")
-    if not isinstance(parsed["discrepancies"], list) or any(not isinstance(x, str) for x in parsed["discrepancies"]):
-        raise ValueError("Paired-judge discrepancies must be a list of strings")
-    if not isinstance(parsed["next_steer"], str) or not parsed["next_steer"].strip():
-        raise ValueError("Paired-judge next_steer must be non-empty text")
+    }
+    response = None
+    try:
+        response = post_json(f"{host.rstrip('/')}/api/chat", request, timeout=300)
+        parsed = _parse_judge_response(response)
+    except (json.JSONDecodeError, ValueError) as first_error:
+        # Liquid can occasionally stop mid-object. Retry the exact same immutable
+        # pair with a larger output budget; never repair or infer missing fields.
+        request["options"]["num_predict"] = 1536
+        try:
+            response = post_json(f"{host.rstrip('/')}/api/chat", request, timeout=300)
+            parsed = _parse_judge_response(response)
+        except (json.JSONDecodeError, ValueError) as retry_error:
+            raise ValueError(
+                "Liquid paired judge returned invalid/incomplete JSON twice "
+                f"(first: {first_error}; retry: {retry_error})"
+            ) from retry_error
     result = {
         "schema_version": 1,
         "status": "pipeline_self_test" if candidate.get("test_fixture") else "paired_judgment",
