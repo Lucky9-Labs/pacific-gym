@@ -143,7 +143,25 @@ def sql_for_run(run_id):
             "' ORDER BY sequence LIMIT 10000")
 
 
-def export_and_verify(trace, api_key, base_url=API_URL, database=None):
+def validate_actual_trace(trace, expected_thread_id=None):
+    """Refuse replay fixtures or incomplete current-thread captures."""
+    if not trace or any(row.get("trace_source") != "codex-app-read_thread-current-thread" for row in trace):
+        raise ValueError("Only explicitly captured current-thread events may be exported as actual traces")
+    if expected_thread_id and any(row.get("codex_thread_id") != expected_thread_id for row in trace):
+        raise ValueError("Captured trace identity does not match the expected current thread")
+    types = {row.get("event_type") for row in trace}
+    if not {"prompt", "tool_call", "tool_result", "decision"}.issubset(types):
+        raise ValueError("Actual trace must contain prompt, tool call, tool result, and decision events")
+    if not any(row.get("artifact_refs") for row in trace):
+        raise ValueError("Actual trace must contain at least one artifact reference")
+    run_ids = {row.get("run_id") for row in trace}
+    threads = {row.get("codex_thread_id") for row in trace}
+    if len(run_ids) != 1 or not next(iter(run_ids)) or len(threads) != 1 or not next(iter(threads)):
+        raise ValueError("Actual trace must have one nonempty run ID and thread ID")
+
+
+def export_and_verify(trace, api_key, base_url=API_URL, database=None, expected_thread_id=None):
+    validate_actual_trace(trace, expected_thread_id)
     safe_rows = redact(trace, [*known_secrets(), api_key])
     run_id = safe_rows[0]["run_id"]
     sql = sql_for_run(run_id)
@@ -175,12 +193,23 @@ def export_and_verify(trace, api_key, base_url=API_URL, database=None):
     if [row.get("sequence") for row in returned_rows] != [row["sequence"] for row in expected]:
         raise ValueError("RawTree event sequence did not round-trip exactly")
     for actual, wanted in zip(returned_rows, expected):
-        if actual != wanted:
+        extra_fields = set(actual) - set(wanted)
+        permitted_metadata = {"timestamp"}  # RawTree supplies ingestion time for this reserved column.
+        if any(actual[field] is not None and field not in permitted_metadata for field in extra_fields):
+            raise ValueError("RawTree added non-null fields to an event row")
+        normalized = {field: actual[field] for field in wanted}
+        if normalized != wanted:
             raise ValueError("RawTree event row fields did not round-trip exactly")
+        original = {field: value for field, value in wanted.items() if field != "row_sha256"}
+        digest = hashlib.sha256(canonical(original).encode()).hexdigest()
+        if wanted.get("row_sha256") != digest:
+            raise ValueError("Exported event row checksum does not match its original fields")
     sessions = {row["codex_session_id"] for row in returned_rows}
     threads = {row["codex_thread_id"] for row in returned_rows}
     if len(sessions) != 1 or not next(iter(sessions)) or len(threads) != 1 or not next(iter(threads)):
         raise ValueError("RawTree rows have missing or inconsistent Codex session/thread identifiers")
+    if expected_thread_id and threads != {expected_thread_id}:
+        raise ValueError("RawTree read-back chat identity does not match the requested current thread")
     digest = hashlib.sha256("\n".join(canonical(row) for row in returned_rows).encode()).hexdigest()
     return {"status": "live_round_trip_passed", "run_id": run_id,
             "table": TABLE, "query": sql, "insert_request_id": insert_request_id,
