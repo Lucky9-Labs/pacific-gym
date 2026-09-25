@@ -9,8 +9,9 @@ Strokah is the first fixture. The versioned source packet at `s3://mech-art-libr
 ## Plugin components
 
 - The repo marketplace installs `plugins/pacific-gym`, whose Codex skill guides source inspection, visual reference generation, Blender repairs, and the final GPU goal.
-- Local command tools expose repeatable `inspect`, `trace`, `generate-video`, `keyframes`, `blender-derive`, `compare`, `validate-usd`, and `promote` steps. Each produces machine-readable results and one documented acceptance command.
-- The planned trusted `PostToolUse` hook will observe candidate-producing batches while a Pacific Gym run is active, invoke the local Liquid VLM against pinned reference frames, return concise feedback to Codex, and write a trace. The current package has only a `SessionStart` install check; `compare` is a manual command and does not auto-steer.
+- Local command tools expose repeatable `inspect`, `trace`, `generate-video`, `keyframes`, `blender-derive`, `compare`, `judge-keyframes`, `validate-usd`, and `promote` steps. Each produces machine-readable results and one documented acceptance command.
+- `compare` remains a manual static-pose pulse. `judge-keyframes` can watch for completed Blender PNGs and invokes local Liquid AI only after it verifies the exact FLUX frame ID, timestamp, source hash, candidate completion hash, and image dimensions. Each advisory result stores both inputs and the comparison image. It does not infer missing pairs or claim physics acceptance.
+- The planned trusted `PostToolUse` hook is still unwired. The package has a `SessionStart` install check and the explicit pair watcher, but it does not yet automatically observe arbitrary candidate-producing tool batches or auto-steer Codex.
 - RawTree stores full textual run traces and metadata after credential redaction. Large media lives in the versioned artifact package, with URI and hash in the trace.
 
 ## Reference and repair loop
