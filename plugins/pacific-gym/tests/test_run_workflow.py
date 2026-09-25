@@ -141,6 +141,48 @@ class RunWorkflowTest(unittest.TestCase):
             self.assertEqual(post_tool_use.main(), 0)
         self.assertEqual(stdout.getvalue(), "")
 
+    def test_post_tool_use_supports_codex_exec_command_payload(self):
+        import pacific_gym.compare as compare
+        sys.path.insert(0, str(PLUGIN / "hooks"))
+        import post_tool_use
+        sys.path.remove(str(PLUGIN / "hooks"))
+        frame = self.workspace / "frame.png"
+        frame.write_bytes(b"frame")
+        data = run.load(self.manifest)
+        data["inputs"].append({**run._input("reference_frame", frame)})
+        run.save(data)
+        candidate = run.add_candidate(self.manifest, self.png, "render")
+        receipt = {
+            "inputs": [{"sha256": "frame"}, {"sha256": candidate["sha256"]}],
+            "visual_pair": {"sha256": "pair-hash"},
+            "model": {"tag": "liquid", "digest": "resolved-model-digest"},
+            "comparison": {"confidence": "high", "evidence": "matched", "next_action": "keep"},
+        }
+        event = {
+            "hook_event_name": "PostToolUse",
+            "cwd": str(self.workspace),
+            "tool_name": "exec_command",
+            "tool_input": {"cmd": "python -m pacific_gym candidate-add render.png"},
+            "tool_response": {"content": [{"type": "text", "text": f"PACIFIC_GYM_CANDIDATE={candidate['id']}"}]},
+        }
+        stdout = io.StringIO()
+        with patch.object(sys, "stdin", io.StringIO(json.dumps(event))), patch("sys.stdout", stdout), \
+                patch.object(compare, "compare_general", return_value=receipt):
+            self.assertEqual(post_tool_use.main(), 0)
+        self.assertIn("comparison recorded", stdout.getvalue())
+        feedback = run.load(self.manifest)["feedback"]
+        self.assertEqual(len(feedback), 1)
+        self.assertEqual(feedback[0]["receipt"]["inputs"][1]["sha256"], candidate["sha256"])
+        self.assertEqual(feedback[0]["receipt"]["visual_pair"]["sha256"], "pair-hash")
+        self.assertEqual(feedback[0]["receipt"]["model"]["digest"], "resolved-model-digest")
+
+        event["tool_input"]["cmd"] = "python -m pacific_gym run-status"
+        stdout = io.StringIO()
+        with patch.object(sys, "stdin", io.StringIO(json.dumps(event))), patch("sys.stdout", stdout), \
+                patch.object(compare, "compare_general", side_effect=AssertionError("should not compare")):
+            self.assertEqual(post_tool_use.main(), 0)
+        self.assertEqual(stdout.getvalue(), "")
+
     def test_isaac_adapter_receipt_must_prove_hashed_video_and_walking(self):
         usd = self.workspace / "robot.usda"
         usd.write_text("#usda 1.0\n")
