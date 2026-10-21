@@ -35,6 +35,18 @@ ambiguous, use verdict "uncertain" and say why. Return only JSON with exactly:
 No numeric score. Do not claim that one image is walking or stable by itself."""
 
 JUDGE_FIELDS = {"verdict", "evidence", "discrepancies", "next_steer", "confidence"}
+JUDGE_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "verdict": {"type": "string", "enum": ["match", "partial", "mismatch", "uncertain"]},
+        "evidence": {"type": "string", "minLength": 1},
+        "discrepancies": {"type": "array", "items": {"type": "string"}},
+        "next_steer": {"type": "string", "minLength": 1},
+        "confidence": {"type": "string", "enum": ["high", "medium", "low"]},
+    },
+    "required": sorted(JUDGE_FIELDS),
+    "additionalProperties": False,
+}
 
 
 def _parse_judge_response(response: dict) -> dict:
@@ -64,6 +76,8 @@ def _sha256(path: Path) -> str:
 
 
 def load_references(manifest_path: Path) -> list[dict]:
+    from .reference_timing import source_identity
+
     manifest_path = Path(manifest_path).resolve()
     manifest = json.loads(manifest_path.read_text())
     dimensions = manifest.get("dimensions")
@@ -73,7 +87,15 @@ def load_references(manifest_path: Path) -> list[dict]:
         raise ValueError("Reference manifest has no frames")
     result = []
     seen = set()
+    previous_source = None
     for frame in manifest["frames"]:
+        identity = source_identity(manifest, frame)
+        if identity is not None:
+            if previous_source is not None and (
+                    identity["decoded_frame_index"] <= previous_source["decoded_frame_index"]
+                    or identity["pts"] <= previous_source["pts"]):
+                raise ValueError("Selected source frames must be in increasing presentation order")
+            previous_source = identity
         name = Path(frame["path"]).name
         frame_id = Path(name).stem
         timestamp = frame.get("timestamp_seconds")
@@ -90,8 +112,11 @@ def load_references(manifest_path: Path) -> list[dict]:
         with Image.open(path) as image:
             if image.size != tuple(dimensions):
                 raise ValueError(f"Unexpected reference dimensions for {frame_id}: {image.size}")
-        result.append({"frame_id": frame_id, "timestamp_seconds": float(timestamp), "path": path,
-                       "sha256": expected, "dimensions": tuple(dimensions)})
+        entry = {"frame_id": frame_id, "timestamp_seconds": float(timestamp), "path": path,
+                 "sha256": expected, "dimensions": tuple(dimensions)}
+        if identity is not None:
+            entry["source_frame"] = identity
+        result.append(entry)
         seen.add(frame_id)
     return result
 
@@ -118,6 +143,8 @@ def publish_candidate(manifest_path: Path, candidate_dir: Path, frame_id: str, t
     sidecar = {"schema_version": 1, "frame_id": frame_id,
                "timestamp_seconds": ref["timestamp_seconds"], "image": image_path.name,
                "sha256": _sha256(image_path), "complete": True}
+    if "source_frame" in ref:
+        sidecar["reference_source_frame"] = ref["source_frame"]
     if test_fixture:
         sidecar["test_fixture"] = True
         sidecar["fixture_note"] = fixture_note or "Test fixture only; not animation evidence"
@@ -141,6 +168,8 @@ def ready_candidate(ref: dict, candidate_dir: Path) -> dict | None:
     if sidecar.get("schema_version") != 1 or sidecar.get("complete") is not True:
         return None
     if sidecar.get("frame_id") != ref["frame_id"] or sidecar.get("image") != image_path.name:
+        return None
+    if sidecar.get("reference_source_frame") != ref.get("source_frame"):
         return None
     try:
         candidate_timestamp = float(sidecar.get("timestamp_seconds", -999))
@@ -223,7 +252,7 @@ def judge_pair(ref: dict, candidate: dict, out_dir: Path, model: str, host: str,
     pair_path = out_dir / f"{ref['frame_id']}-pair.png"
     pair_bytes = _make_pair(ref["path"], candidate["path"], pair_path)
     request = {
-        "model": model, "stream": False, "format": "json",
+        "model": model, "stream": False, "format": JUDGE_SCHEMA,
         "options": {"temperature": 0, "num_ctx": 8192, "num_predict": 768},
         "messages": [{"role": "user", "content": PROMPT,
                       "images": [base64.b64encode(pair_bytes).decode("ascii")]}],
@@ -240,16 +269,31 @@ def judge_pair(ref: dict, candidate: dict, out_dir: Path, model: str, host: str,
             response = post_json(f"{host.rstrip('/')}/api/chat", request, timeout=300)
             parsed = _parse_judge_response(response)
         except (json.JSONDecodeError, ValueError) as retry_error:
+            diagnostic = {
+                "status": "invalid_judge_response",
+                "runtime_module": str(Path(__file__).resolve()),
+                "frame_id": ref["frame_id"],
+                "reference_sha256": ref["sha256"],
+                "candidate_sha256": candidate["sha256"],
+                "judge_model": model_info,
+                "response_schema": JUDGE_SCHEMA,
+                "response": response,
+                "first_error": str(first_error),
+                "retry_error": str(retry_error),
+            }
+            (out_dir / f"{ref['frame_id']}-failure.json").write_text(
+                json.dumps(diagnostic, indent=2) + "\n")
             raise ValueError(
                 "Liquid paired judge returned invalid/incomplete JSON twice "
-                f"(first: {first_error}; retry: {retry_error})"
+                f"(first: {first_error}; retry: {retry_error}); runtime={Path(__file__).resolve()}"
             ) from retry_error
     result = {
         "schema_version": 1,
         "status": "pipeline_self_test" if candidate.get("test_fixture") else "paired_judgment",
         "frame_id": ref["frame_id"], "timestamp_seconds": ref["timestamp_seconds"],
         "pair": {
-            "actual_target": {"role": "flux_reference_frame", "path": str(ref["path"]), "sha256": ref["sha256"]},
+            "actual_target": {"role": "flux_reference_frame", "path": str(ref["path"]),
+                              "sha256": ref["sha256"], "source_frame": ref.get("source_frame")},
             "synthetic_candidate": {"role": "blender_rendered_animation_frame", "path": str(candidate["path"]),
                                     "sha256": candidate["sha256"], "test_fixture": candidate.get("test_fixture", False),
                                     "fixture_note": candidate.get("fixture_note")},
@@ -274,6 +318,7 @@ def _existing_judgment(path: Path, ref: dict) -> dict | None:
                  result.get("frame_id") == ref["frame_id"] and
                  result.get("timestamp_seconds") == ref["timestamp_seconds"] and
                  pair["actual_target"].get("sha256") == ref["sha256"] and
+                 pair["actual_target"].get("source_frame") == ref.get("source_frame") and
                  result.get("status") in {"paired_judgment", "pipeline_self_test"})
     except (OSError, json.JSONDecodeError, KeyError, TypeError):
         valid = False

@@ -89,10 +89,10 @@ def blender_derive(manifest: Path, executable: str, script: Path,
     stage_dir = run_dir / "inputs"
     stage_dir.mkdir(parents=True, exist_ok=True)
     for index, item in enumerate(before):
-        staged = stage_dir / f"blender-{index}-{Path(item['path']).name}"
-        staged.unlink(missing_ok=True)
-        shutil.copyfile(item["path"], staged)
-        staged.chmod(0o444)
+        staged = stage_dir / f"blender-{index}-{item['sha256']}-{Path(item['path']).name}"
+        if not staged.exists():
+            shutil.copyfile(item["path"], staged)
+            staged.chmod(0o444)
         if sha256(staged) != item["sha256"]:
             raise ValueError("Blender staging copy does not match the immutable source")
         staged_inputs.append(staged)
@@ -112,7 +112,21 @@ def blender_derive(manifest: Path, executable: str, script: Path,
             or any(item["sha256"] != before[index]["sha256"] for index, item in enumerate(staged_after))):
         raise ValueError("Blender modified an immutable input or staging copy; run was stopped")
     if completed.returncode:
-        raise RuntimeError(f"Blender exited {completed.returncode}: {completed.stderr[-2000:]}")
+        failed_path = run_dir / "receipts" / (
+            "blender-failed-" + datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ") + ".json")
+        _receipt(failed_path, {
+            "schema_version": 1, "kind": "blender_derive", "status": "failed",
+            "command": command, "script_sha256": sha256(script),
+            "inputs": after_inputs, "staged_inputs": staged_after,
+            "outputs": [{"path": str(path), "exists": path.is_file(),
+                         "sha256": sha256(path) if path.is_file() else None}
+                        for path in resolved_outputs],
+            "exit_code": completed.returncode, "stdout_tail": completed.stdout[-4000:],
+            "stderr_tail": completed.stderr[-4000:],
+        })
+        raise RuntimeError(
+            f"Blender exited {completed.returncode}; failed receipt: {failed_path}: "
+            f"{completed.stderr[-2000:]}")
     missing = [str(path) for path in resolved_outputs if not path.is_file()]
     if missing:
         raise ValueError(f"Blender did not create declared outputs: {missing}")

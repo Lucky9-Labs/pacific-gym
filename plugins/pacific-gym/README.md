@@ -20,6 +20,13 @@ This creates `.env` only when the destination is absent. It does not acquire cre
 
 Run `python3 -m pacific_gym --help` from this directory for the complete command list. `run-start`, `run-status`, `candidate-add`, `run-block`, `run-complete`, `inspect`, `compare`, `publish-candidate-frame`, `extract-keyframes`, `judge-keyframes`, `trace`, `blender-derive`, `isaac-run`, `target-preflight`, and `generate-video` are implemented. No `validate-usd` or `promote` command is provided.
 
+During an active run, PostToolUse audits newly captured actual-thread trace
+events against the run goal with local Ollama `qwen2.5:7b` by default. Findings
+must cite valid sequence IDs and exact event excerpts. Receipts are advisory
+under `.pacific-gym/runs/<run-id>/receipts/trace-audits/`; failed audits leave
+events unreviewed and never change acceptance. Image review remains a separate
+local vision-model path.
+
 Start a run, then generate into that run's `generation/bfl-video` directory:
 
 ```sh

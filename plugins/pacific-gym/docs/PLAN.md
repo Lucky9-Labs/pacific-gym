@@ -8,5 +8,6 @@ Each asset task begins with an immutable reference and a workspace-local run. Ev
 4. Compare explicit candidates and synchronized keyframes as advisory visual checks.
 5. Validate articulation and repeated forward walking through a scenario adapter on an authorized supported GPU host.
 6. Complete only after recorded GPU walking acceptance; otherwise record a specific blocker and evidence.
+7. Audit newly captured actual-thread trace events against the run-specific goal for drift, skipped gates, unsupported claims, and unapproved spend. Findings must cite event sequences and exact excerpts; keep audits advisory and report failures as unreviewed.
 
 Local checks and generated visual references do not establish physics readiness. Host provisioning is outside the package workflow.

@@ -55,7 +55,14 @@ python3 -m pacific_gym candidate-add --manifest /absolute/path/.pacific-gym/runs
   --image /absolute/path/candidate.png --stage blender-render
 ```
 
-The installed `PostToolUse` hook reacts only to this explicit command while a run is active. If pinned reference PNGs exist and local Ollama is available, it compares them and records the model digest, source and render hashes, visual-pair hash, evidence, confidence, and next action in the run manifest. Comparison failure is advisory and never promotes a candidate. It does not create a Goal, infer acceptance, or watch unrelated tool batches. Set `PACIFIC_GYM_OLLAMA_HOST` or `PACIFIC_GYM_VISION_MODEL` to override local defaults.
+The installed `PostToolUse` hook compares candidate renders and published
+timestamped keyframes with pinned references. It also audits newly captured
+actual-thread events in `traces/actual-chat-trace.json` against the run goal
+using local Ollama `qwen2.5:7b` by default (override with
+`PACIFIC_GYM_TRACE_MODEL`). Findings require valid sequence IDs and exact event
+excerpts; receipts are saved in `receipts/trace-audits/`. Text audits and image
+comparisons are advisory and cannot promote candidates or change acceptance.
+Failed audits leave events unreviewed.
 
 ## Blender derivative
 

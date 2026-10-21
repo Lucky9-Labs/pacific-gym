@@ -56,6 +56,12 @@ def host_config() -> dict:
     load_dotenv()
     fields = {
         "access_method": "PACIFIC_GYM_GPU_ACCESS_METHOD",
+        "ssh_host": "PACIFIC_GYM_SSH_HOST",
+        "target_os": "PACIFIC_GYM_TARGET_OS",
+        "wsl_workspace": "PACIFIC_GYM_WSL_WORKSPACE",
+        "target_ollama_url": "PACIFIC_GYM_TARGET_OLLAMA_URL",
+        "ollama_executable": "PACIFIC_GYM_OLLAMA_EXECUTABLE",
+        "ollama_models": "PACIFIC_GYM_OLLAMA_MODELS",
         "sandbox_id": "PACIFIC_GYM_MODAL_SANDBOX_ID",
         "modal_python": "PACIFIC_GYM_MODAL_PYTHON",
         "workspace": "PACIFIC_GYM_GPU_WORKSPACE",

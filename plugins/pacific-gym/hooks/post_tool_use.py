@@ -6,7 +6,7 @@ import os
 import re
 import shlex
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 
@@ -14,6 +14,23 @@ def emit(context: str) -> None:
     print(json.dumps({"hookSpecificOutput": {
         "hookEventName": "PostToolUse", "additionalContext": context
     }}))
+
+
+def _trace_audit_context(result: dict) -> str:
+    if result.get("status") == "retry_backoff":
+        return ("Pacific Gym local text trace audit remains pending because the local reviewer "
+                f"was unavailable; retry after {result.get('retry_after_utc')}. "
+                f"Pending events: {result.get('pending_events', 0)}. Treat traces as unreviewed.")
+    audit = result.get("audit", {})
+    summaries = []
+    for finding in audit.get("findings", [])[:4]:
+        seqs = ",".join(str(sequence) for sequence in finding.get("sequences", []))
+        summaries.append(f"seq {seqs} ({finding.get('severity')}): {finding.get('assessment')}")
+    findings = " | ".join(summaries) if summaries else "no grounded findings"
+    return (f"Pacific Gym local text trace audit reviewed {len(result.get('audited_events', []))} "
+            f"new event(s), status={audit.get('overall')}, confidence={audit.get('confidence')}: "
+            f"{findings}. Receipt: {result.get('receipt')}. Advisory only; verify each quoted event. "
+            f"Pending unexamined events: {result.get('pending_events', 0)}.")
 
 
 def _text_response(value) -> str:
@@ -122,26 +139,59 @@ def main() -> int:
             command = tool_input.get("command") or tool_input.get("cmd") or ""
         if event.get("tool_name") not in {"Bash", "exec_command"} or not isinstance(command, str):
             return 0
+        workspace = Path(event.get("cwd") or os.getcwd()).resolve()
+        root = Path(os.environ.get("PLUGIN_ROOT", Path(__file__).resolve().parents[1]))
+        if str(root) not in sys.path:
+            sys.path.insert(0, str(root))
+        from pacific_gym.env import bootstrap_worktree_env, load_dotenv
+        env_path = bootstrap_worktree_env(workspace)
+        load_dotenv(env_path)
+        from pacific_gym import run
+        active = run.for_workspace(workspace)
+        trace_notice = ""
+        if active:
+            try:
+                from pacific_gym.trace_audit import audit_unexamined_trace
+                manifest, data = active
+                audit = audit_unexamined_trace(manifest, data)
+                if audit:
+                    trace_notice = _trace_audit_context(audit)
+            except Exception as exc:
+                try:
+                    manifest, _ = active
+                    retry_path = manifest.parent / "receipts" / "trace-audit-retry.json"
+                    retry_path.parent.mkdir(parents=True, exist_ok=True)
+                    retry_after = datetime.now(timezone.utc) + timedelta(seconds=60)
+                    retry_path.write_text(json.dumps({
+                        "status": "retry_backoff", "pending_events": "unknown",
+                        "last_error": f"{type(exc).__name__}: {exc}",
+                        "retry_after_utc": retry_after.isoformat(),
+                    }, indent=2) + "\n")
+                except Exception:
+                    pass
+                trace_notice = ("Pacific Gym local text trace audit could not complete: "
+                                f"{type(exc).__name__}: {exc}. Treat recent traces as unreviewed.")
         output = _text_response(event.get("tool_response", ""))
         keyframe_args = _published_keyframe(command, output)
         if keyframe_args:
             model = os.environ.get("PACIFIC_GYM_VISION_MODEL", "hf.co/LiquidAI/LFM2.5-VL-3B-GGUF:Q4_K_M")
             host = os.environ.get("PACIFIC_GYM_OLLAMA_HOST", "http://127.0.0.1:11434")
             _compare_published_keyframe(keyframe_args, model, host)
+            if trace_notice:
+                emit(trace_notice)
             return 0
         if "candidate-add" not in command:
+            if trace_notice:
+                emit(trace_notice)
             return 0
         match = re.search(r"PACIFIC_GYM_CANDIDATE=([0-9a-f-]{36})", output)
         if not match:
             return 0
-        workspace = Path(event.get("cwd") or os.getcwd()).resolve()
-        root = Path(os.environ.get("PLUGIN_ROOT", Path(__file__).resolve().parents[1]))
-        sys.path.insert(0, str(root))
-        from pacific_gym import run
         from pacific_gym.compare import compare_general
 
-        active = run.for_workspace(workspace)
         if not active:
+            if trace_notice:
+                emit(trace_notice)
             return 0
         manifest, data = active
         candidate_id = match.group(1)
@@ -165,12 +215,14 @@ def main() -> int:
             run.add_feedback(manifest, candidate_id, receipt)
             comparison = receipt["comparison"]
             summaries.append(f"{comparison['confidence']}: {comparison['evidence']} Next: {comparison['next_action']}")
+        if trace_notice:
+            emit(trace_notice)
         emit("Pacific Gym reference comparison recorded. Treat model feedback as advisory: "
              "verify each suggested edit against the cited evidence before applying it. "
              "Still images do not establish rig validity, physics, or walking. " + " | ".join(summaries))
         return 0
     except Exception as exc:
-        emit(f"Pacific Gym candidate comparison could not run: {type(exc).__name__}: {exc}. Keep the candidate; do not treat comparison failure as acceptance.")
+        emit(f"Pacific Gym PostToolUse hook could not complete: {type(exc).__name__}: {exc}. Treat any unreceipted comparison or trace review as unverified.")
         return 0
 
 

@@ -136,6 +136,26 @@ def query_rows(response):
     raise ValueError("Unexpected RawTree query response shape")
 
 
+def normalize_timestamp(value):
+    """Normalize RFC 3339 and RawTree timestamp renderings to a UTC instant."""
+    if not isinstance(value, str):
+        raise ValueError("Timestamp must be a string")
+    parsed = datetime.fromisoformat(value.strip().replace("Z", "+00:00"))
+    if parsed.tzinfo is None:
+        # RawTree renders UTC datetimes without an offset and may add nanosecond zeros.
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc).isoformat(timespec="microseconds").replace("+00:00", "Z")
+
+
+def _round_trip_equal(field, actual, wanted):
+    if field in {"timestamp", "captured_at", "created_at", "updated_at"}:
+        try:
+            return normalize_timestamp(actual) == normalize_timestamp(wanted)
+        except (TypeError, ValueError, OverflowError):
+            return actual == wanted
+    return actual == wanted
+
+
 def sql_for_run(run_id):
     if not re.fullmatch(r"[0-9a-f-]{36}", run_id):
         raise ValueError("run_id must be a UUID")
@@ -197,8 +217,8 @@ def export_and_verify(trace, api_key, base_url=API_URL, database=None, expected_
         permitted_metadata = {"timestamp"}  # RawTree supplies ingestion time for this reserved column.
         if any(actual[field] is not None and field not in permitted_metadata for field in extra_fields):
             raise ValueError("RawTree added non-null fields to an event row")
-        normalized = {field: actual[field] for field in wanted}
-        if normalized != wanted:
+        if any(not _round_trip_equal(field, actual[field], value)
+               for field, value in wanted.items()):
             raise ValueError("RawTree event row fields did not round-trip exactly")
         original = {field: value for field, value in wanted.items() if field != "row_sha256"}
         digest = hashlib.sha256(canonical(original).encode()).hexdigest()
