@@ -29,6 +29,16 @@ directory and must be preserved if the checkout is cleaned.
   walk and reference comparison, then evaluate style and damage behavior.
   The project usage hard floor is 20% remaining.
 
+## GitHub issue tracker
+
+Open issues created from this checkpoint:
+
+- [#17 Finish the held-out Liquid contact-control set before calibration](https://github.com/Lucky9-Labs/pacific-gym/issues/17)
+- [#18 Rebuild FLUX reference timing from source presentation timestamps](https://github.com/Lucky9-Labs/pacific-gym/issues/18)
+- [#19 Achieve a repeatable native Strokah walking cycle](https://github.com/Lucky9-Labs/pacific-gym/issues/19)
+- [#20 Add native damage-event evidence and demonstrate post-damage locomotion](https://github.com/Lucky9-Labs/pacific-gym/issues/20)
+- [#21 Preserve ignored run evidence before clearing the Pacific Gym checkout](https://github.com/Lucky9-Labs/pacific-gym/issues/21)
+
 ## Held-out Liquid contact controls
 
 Task `01a0ec2f-0d55-7db0-92f1-91852a3fbd3d` prepared three local previews from
