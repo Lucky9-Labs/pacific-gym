@@ -32,6 +32,12 @@
       "state": "local_runtime_verified_gpu_unverified",
       "proof": "proof/slice-07/hook-run.json",
       "acceptance_command": "PYTHONPATH=plugins/pacific-gym python3 -m unittest discover -s plugins/pacific-gym/tests -v"
+    },
+    {
+      "id": "strokah-animation-dummy-v1",
+      "state": "selected_dummy_storage_and_restore_verified_engine_pending",
+      "proof": "proof/animation-dummy-v1/proof.json",
+      "acceptance_command": "python3 scripts/restore-animation-dummy.py --profile remote-engine-admin --destination /mnt/d/PacificGym/tmp/animation-dummy-restore-check-v1"
     }
   ],
   "gpu_handoff": null
