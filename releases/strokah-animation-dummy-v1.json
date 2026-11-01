@@ -1,0 +1,139 @@
+{
+  "schema_version": 1,
+  "release": "strokah-animation-dummy-v1",
+  "asset_id": "strokah-animation-dummy",
+  "release_version": 1,
+  "authoring_revision": "cockpit-feet-v6",
+  "selected_date": "2026-10-28",
+  "status": "selected_animation_dummy",
+  "purpose": "basic_animation_and_hitbox_layout",
+  "bucket": "mech-art-library-20260905225047699700000001",
+  "artifacts": {
+    "bundle": {
+      "object_key": "models/mechs/strokah-animation-dummy/v1/sha256-505bb36d4808fb8961ca1a6d54b562c8530b9e574b21c2fe1ea0f3561aae5244/strokah-animation-dummy-v1.zip",
+      "s3_version_id": "XkYk2XfNc19TKzJHNy1pp5mxS5X32kTr",
+      "sha256": "505bb36d4808fb8961ca1a6d54b562c8530b9e574b21c2fe1ea0f3561aae5244",
+      "bytes": 3163626,
+      "content_type": "application/zip",
+      "server_side_encryption": "AES256"
+    }
+  },
+  "entrypoints": {
+    "animation_source": "native/strokah-animation-dummy.blend",
+    "neutral_preview": "native/strokah-animation-dummy-neutral.blend",
+    "engine_interchange_candidate": "exports/strokah-animation-dummy.fbx"
+  },
+  "rig": {
+    "bones": 63,
+    "original_bones_retained": 62,
+    "added_before_this_release": "MCH_contact_heel.L",
+    "mesh_count": 1,
+    "weighted_vertices": 4216,
+    "vertex_groups": 48,
+    "bilateral_neutral_rest": true
+  },
+  "action": {
+    "name": "Strokah_Gameplay_WalkLoop_InPlace_3p3s_v1",
+    "fps": 60,
+    "frame_start": 1,
+    "frame_end": 199,
+    "duration_seconds": 3.3,
+    "signature": "5fc82c6bafcf643de1febec67f75403927c9e0d70f522bc3c3a19cd0d1592184"
+  },
+  "acceptance": {
+    "selected_animation_dummy": true,
+    "native_windows_blender_gui_playback": true,
+    "blender_structural_readback": true,
+    "engine_import": false,
+    "physics": false,
+    "final_art": false
+  },
+  "known_limitations": [
+    "Default Blender FBX reimport changes Connected flags; native Blend is the animation authority.",
+    "Hitbox-layout reference only; engine colliders are not authored."
+  ],
+  "publication": {
+    "private": true,
+    "version_pinned": true,
+    "download_readback_sha256": "505bb36d4808fb8961ca1a6d54b562c8530b9e574b21c2fe1ea0f3561aae5244",
+    "all_bundle_files_verified": true
+  },
+  "provenance": {
+    "run_id": "3273fbdb-8653-4a23-9565-572f9ebedcd5",
+    "derivative": "tube-playtest-proxy-v1",
+    "source_iteration": "v6",
+    "kimodo_g1_retarget_used": false
+  },
+  "files": [
+    {
+      "path": "native/strokah-animation-dummy.blend",
+      "sha256": "9e21b1399913ac7c43a3c7d9f529d74a84da20f3ea61d1b2a5266708f79d9821",
+      "bytes": 1110190
+    },
+    {
+      "path": "native/strokah-animation-dummy-neutral.blend",
+      "sha256": "31a256b0014bf169e8b3f007c4407c05b4e80e370c5275ec4b03745137ff8b32",
+      "bytes": 1109022
+    },
+    {
+      "path": "exports/strokah-animation-dummy.fbx",
+      "sha256": "4b41cde16ed0da6fb44acd7cb8cc3e6d3c7733f12085790c142f02e3e21302e3",
+      "bytes": 1348764
+    },
+    {
+      "path": "evidence/blender-readback.json",
+      "sha256": "da12cee54b6ba53f505749f01b547b711423a69fdac6cd9fd5b9a3552fcab986",
+      "bytes": 14901
+    },
+    {
+      "path": "evidence/edit-receipt.json",
+      "sha256": "f15fcd7b43289301dafe3f85288f3adbc4534ac720fd8a752828a5fea48d46b7",
+      "bytes": 12085
+    },
+    {
+      "path": "evidence/playtest-receipt.json",
+      "sha256": "dbe8c6c73c06e372ac4193a0b95c8128e5c10d19170cc4e922f2b9268ba68bd5",
+      "bytes": 17087
+    },
+    {
+      "path": "evidence/01-playing-front-frame37.png",
+      "sha256": "b319df0eb7feb979946865101cc2a196f453c5548cc2c5b9a2bceb954fb41241",
+      "bytes": 145872
+    },
+    {
+      "path": "evidence/02-playing-side-frame65.png",
+      "sha256": "e891c3562ad706714d33741d8fb9c225f25b60b85957e7f50cd490572fa532ee",
+      "bytes": 142920
+    },
+    {
+      "path": "evidence/04-neutral-side.png",
+      "sha256": "eb9f91d0694327034a1f078fe7daee636a6a2da04bd45d1f1aa4b907c91cb2c8",
+      "bytes": 138821
+    },
+    {
+      "path": "evidence/05-neutral-front.png",
+      "sha256": "53b0d8e7c659c0649e2c539f3db84328fe5351adf54a7a9e6f4e2fb539c05179",
+      "bytes": 134931
+    },
+    {
+      "path": "evidence/06-overlay-front.png",
+      "sha256": "2aedd87e9268233f2d3d72304ec48981aad3c3657b5ab0613b18e031fe7cb45d",
+      "bytes": 144333
+    },
+    {
+      "path": "evidence/07-overlay-side.png",
+      "sha256": "d18777a9c10aa2f88a05d0dc6058e078c252d3037d4f3ff3cd3d82750c04c109",
+      "bytes": 135551
+    },
+    {
+      "path": "README.md",
+      "sha256": "a1b89d291821c060641490e82c81c4a568c4b6d188941cdbe4a16f727e85a5d1",
+      "bytes": 2346
+    },
+    {
+      "path": "bundle.json",
+      "sha256": "fa6a072a88e83a0681dfa85578cb71ca1668c9d2fb4690e6296cac9bd6928526",
+      "bytes": 4446
+    }
+  ]
+}

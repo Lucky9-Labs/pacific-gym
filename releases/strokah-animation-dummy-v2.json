@@ -1,0 +1,174 @@
+{
+  "schema_version": 1,
+  "release": "strokah-animation-dummy-v2",
+  "asset_id": "strokah-animation-dummy",
+  "release_version": 2,
+  "authoring_revision": "walk-v4_sprint-v7-r01",
+  "status": "selected_animation_release",
+  "bucket": "mech-art-library-20260905225047699700000001",
+  "artifacts": {
+    "bundle": {
+      "object_key": "models/mechs/strokah-animation-dummy/v2/sha256-7c0883d71e0dc82302a53355efa9e392def7ddcab0ee7600994895d6788aeac0/strokah-animation-dummy-v2.zip",
+      "sha256": "7c0883d71e0dc82302a53355efa9e392def7ddcab0ee7600994895d6788aeac0",
+      "bytes": 33468154,
+      "content_type": "application/zip",
+      "s3_version_id": "Dyn8VhwRhcD8tK.2l.zHfWfjeM72lP5S",
+      "server_side_encryption": "AES256"
+    }
+  },
+  "entrypoints": {
+    "locomotion_contract": "locomotion.json",
+    "corrected_mesh": "exports/model-sprint.fbx",
+    "walk_animation_only": "exports/model-walk.fbx",
+    "dummy": "native/dummy-sprint.blend"
+  },
+  "clips": {
+    "walk": {
+      "fbx": "exports/model-walk.fbx",
+      "sha256": "01fd692dd008d147e76c06322b191142344e03b5e5741e1a1da4367d303deca2",
+      "action": "Strokah_Aligned_Walk_Candidate_v4",
+      "action_signature": "788df069989aa0621d63359c9dcb964933ae732ca8469614ae5986307a35615b",
+      "rig_signature": "15a7c46f34ba4bf9e3316c5f4b29ba92df25b50d059cbca62976b201d03dddb3",
+      "duration_seconds": 2.0,
+      "fps": 60,
+      "duty": 0.64,
+      "authored_stance_speed_mps": 0.234375
+    },
+    "sprint": {
+      "fbx": "exports/model-sprint.fbx",
+      "sha256": "9ce8a5de3b7222184aac617922b532acd120acbe0b073353d77cd3956e61e0e1",
+      "action": "Strokah_Aligned_Sprint_Candidate_v7",
+      "action_signature": "9d080138a6b757be93d61a4dad558201d15deca4ac204aede5bbc2ae071a1a74",
+      "rig_signature": "15a7c46f34ba4bf9e3316c5f4b29ba92df25b50d059cbca62976b201d03dddb3",
+      "duration_seconds": 0.7,
+      "fps": 60,
+      "duty": 0.4,
+      "authored_stance_speed_mps": 1.5535714285714288
+    }
+  },
+  "acceptance": {
+    "contact_phase_right_offset": 0.5,
+    "terrain_is_runtime_additive": true,
+    "terrain_runtime_acceptance": false,
+    "physics_acceptance": false,
+    "final_art_acceptance": false
+  },
+  "files": [
+    {
+      "path": "README.md",
+      "sha256": "b8ccddb86af62b0bc468c6f741ff649cea4bd4244556c7126b34cb99c5a7e33a",
+      "bytes": 920
+    },
+    {
+      "path": "evidence/dummy-sprint/motion-validation.json",
+      "sha256": "cd3cefd95b46d671273db28a0aa2fc6b36ac52dac792dddc4fab88b9ab1ec5b1",
+      "bytes": 6196
+    },
+    {
+      "path": "evidence/dummy-sprint/readback.json",
+      "sha256": "f0529ff89f7c43ec4956fb60ca9a3c0851bc090bcb7c0cca15c6e0794939aa96",
+      "bytes": 3911
+    },
+    {
+      "path": "evidence/dummy-walk/motion-validation.json",
+      "sha256": "d9aa88f0051dfc6d64f6b31123602e11cb524ba493d455c4e8b209ea85ea7cce",
+      "bytes": 4074
+    },
+    {
+      "path": "evidence/dummy-walk/readback.json",
+      "sha256": "78aabe3f6e06fec4a6c7b3265215abb42affff25c4a9fe8e879332cc594d83bd",
+      "bytes": 2630
+    },
+    {
+      "path": "evidence/model-sprint/motion-validation.json",
+      "sha256": "30561eff6a579f43f48c61001b21808cf9e8c4bfcf9b85fce72db4c33c66af19",
+      "bytes": 28493
+    },
+    {
+      "path": "evidence/model-sprint/readback.json",
+      "sha256": "8101dab1972401aea4de44e07de3b93d0bd7fb55a8a9f7aa558db7f5bef628aa",
+      "bytes": 26202
+    },
+    {
+      "path": "evidence/model-walk/motion-validation.json",
+      "sha256": "abd4536e9aa3cc46f3dd281c96a280a2747c9ccc304a75fcbd2dbbde535d8a3e",
+      "bytes": 3828
+    },
+    {
+      "path": "evidence/model-walk/readback.json",
+      "sha256": "b35dd13033401c03b10ee5738444444c9e24c55143b51d962c7120a1bc0c76b8",
+      "bytes": 2516
+    },
+    {
+      "path": "evidence/sprint-visual-review.json",
+      "sha256": "11b66f1771fae1a9f33d62bbbed821cd8e203f8c16c0a3c96b1faa1c89921ea6",
+      "bytes": 2224
+    },
+    {
+      "path": "exports/dummy-sprint.fbx",
+      "sha256": "9f90bf52d796d1ffdeecb862e1f128a200a0851b6025086ac949b32919f982ab",
+      "bytes": 946588
+    },
+    {
+      "path": "exports/dummy-walk.fbx",
+      "sha256": "a24ada2bbae0c31dc19d621994688f5ec3f13fc1e40a2ff6fa105da004f21bca",
+      "bytes": 1066204
+    },
+    {
+      "path": "exports/model-sprint.fbx",
+      "sha256": "9ce8a5de3b7222184aac617922b532acd120acbe0b073353d77cd3956e61e0e1",
+      "bytes": 9153660
+    },
+    {
+      "path": "exports/model-walk.fbx",
+      "sha256": "01fd692dd008d147e76c06322b191142344e03b5e5741e1a1da4367d303deca2",
+      "bytes": 9271548
+    },
+    {
+      "path": "locomotion.json",
+      "sha256": "99fe4cfc822b9118a2c00dbcfd81e542b73063d353c4daf39d6fa9092cf18b69",
+      "bytes": 1432
+    },
+    {
+      "path": "native/dummy-sprint.blend",
+      "sha256": "9c6fa02ff4e29cbd34f08e1f1650b1f62d3b57881d628ea35c0b9b7fb7ef6d9f",
+      "bytes": 2847619
+    },
+    {
+      "path": "native/dummy-walk.blend",
+      "sha256": "da8e824c27bc11bf888cf4c5d8a32aa2f6f1f59db9e76e51fa6e3be2f816920e",
+      "bytes": 2279157
+    },
+    {
+      "path": "native/model-sprint.blend",
+      "sha256": "671d4ad286b556d8b53c33bc9c628925b1dbffb14cbbb3bd5340e57940e60460",
+      "bytes": 6789842
+    },
+    {
+      "path": "native/model-walk.blend",
+      "sha256": "bee3e755154a899880201bc9f1fb3ba9db6c1711bc7e47f3b3db77f0660eac4a",
+      "bytes": 6211685
+    },
+    {
+      "path": "previews/sprint-v7-foot-peel-loop.gif",
+      "sha256": "a0eaddc47ff1ba827fb7e5108fec76d8f9dc9500158bc8bfa179ac6102a42dd5",
+      "bytes": 2832873
+    },
+    {
+      "path": "previews/sprint-v7-full-body-loop.gif",
+      "sha256": "5923cd9f6d085f5622423bc9ff860b3028dd14abc093707e6caa4d3a956442cc",
+      "bytes": 1746417
+    },
+    {
+      "path": "previews/walk.gif",
+      "sha256": "9aeaecde5b37afa9731034b10426d927e1fcea5a3de204069faba3bcecd7f082",
+      "bytes": 1468255
+    }
+  ],
+  "publication": {
+    "private": true,
+    "version_pinned": true,
+    "download_readback_sha256": "7c0883d71e0dc82302a53355efa9e392def7ddcab0ee7600994895d6788aeac0",
+    "all_bundle_files_verified": true
+  }
+}

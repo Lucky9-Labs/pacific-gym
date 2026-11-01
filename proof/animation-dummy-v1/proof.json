@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "slice": "strokah-animation-dummy-v1",
+  "status": "selected_dummy_storage_and_restore_verified_engine_pending",
+  "release_manifest": "releases/strokah-animation-dummy-v1.json",
+  "scope": "Immutable animation dummy release; no engine, collider, physics or final-art acceptance.",
+  "native_authoring_evidence": {
+    "host": "L-GPC",
+    "application": "Blender 5.2.2 LTS",
+    "gui_playback_observed": true,
+    "front_playing_frame": 37,
+    "side_playing_frame": 65,
+    "paused_frame": 108,
+    "neutral_front_and_side_viewed": true,
+    "symmetry_verified": true,
+    "action_preserved": true,
+    "evidence_location": "Private release bundle evidence/ directory"
+  },
+  "storage": {
+    "schema_version": 1,
+    "asset_id": "strokah-animation-dummy",
+    "release_version": 1,
+    "status": "published_private_and_readback_verified",
+    "bucket": "mech-art-library-20260905225047699700000001",
+    "object_key": "models/mechs/strokah-animation-dummy/v1/sha256-505bb36d4808fb8961ca1a6d54b562c8530b9e574b21c2fe1ea0f3561aae5244/strokah-animation-dummy-v1.zip",
+    "s3_version_id": "XkYk2XfNc19TKzJHNy1pp5mxS5X32kTr",
+    "sha256": "505bb36d4808fb8961ca1a6d54b562c8530b9e574b21c2fe1ea0f3561aae5244",
+    "readback_sha256": "505bb36d4808fb8961ca1a6d54b562c8530b9e574b21c2fe1ea0f3561aae5244",
+    "bytes": 3163626,
+    "content_type": "application/zip",
+    "server_side_encryption": "AES256",
+    "object_last_modified": "2026-10-28T23:46:11+00:00",
+    "all_bundle_files_verified": true
+  },
+  "restore_checks": {
+    "s3_version_pinned_download_restore": true,
+    "all_14_files_hash_verified": true,
+    "identical_restore_no_changes": true,
+    "local_edit_overwrite_refused": true,
+    "corrupt_bundle_refused_before_extraction": true
+  },
+  "pending": [
+    "Chosen engine FBX import and actual playback",
+    "Engine colliders/hitboxes",
+    "Physics acceptance"
+  ],
+  "known_fbx_issue": "Default Blender FBX import changes Connected flags; maximum sampled bounds error 0.0117135644 m, reduced to 4.32134e-7 m after temporary source-flag restoration."
+}
