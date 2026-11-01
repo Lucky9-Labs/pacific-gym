@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "slice": "strokah-animation-dummy-v2",
+  "status": "published_private_and_restore_verified",
+  "release_manifest": "releases/strokah-animation-dummy-v2.json",
+  "bundle_sha256": "7c0883d71e0dc82302a53355efa9e392def7ddcab0ee7600994895d6788aeac0",
+  "s3_version_id": "Dyn8VhwRhcD8tK.2l.zHfWfjeM72lP5S",
+  "checks": {
+    "source_hashes_preserved": true,
+    "walk_unchanged": true,
+    "model_rig_signatures_match": true,
+    "cloud_download_matches": true,
+    "all_22_members_verified": true,
+    "identical_restore_no_changes": true,
+    "local_edit_overwrite_refused_before_extraction": true,
+    "corrupt_archive_refused_before_extraction": true
+  },
+  "acceptance": {
+    "source_animation_selected": true,
+    "terrain_runtime": false,
+    "physics": false,
+    "final_art": false
+  }
+}

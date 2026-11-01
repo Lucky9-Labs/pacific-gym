@@ -1,6 +1,39 @@
 # Strokah Animation Dummy
 
-The current selected dummy is **release 1**, frozen from the user-reviewed
+The current selected locomotion package is **release 2**: the approved walk v4
+(2 seconds) and sprint v7 (0.7 seconds), with the detailed model and egg/tube
+dummy. The animation files are byte-preserved, including the original 3.3-second
+action in their native Blend files. No Kimodo retarget is used.
+
+The [v2 manifest](../releases/strokah-animation-dummy-v2.json) pins the private
+S3 version, archive hash and all 22 member hashes. Restore with:
+
+```sh
+python3 scripts/restore-animation-dummy.py --profile remote-engine-admin \
+  --destination /mnt/d/PacificGym/assets/strokah-animation-dummy/v2
+```
+
+Use `exports/model-sprint.fbx` for the shared **mesh and skeleton**, then import
+`exports/model-walk.fbx` as **animation only** onto it. This keeps the sprint's
+corrected torso cheek weights. Both model clips have the same 62-bone rig
+signature. The dummy retains its existing 63rd helper bone. `locomotion.json`
+records timing, contact duty and authored stance speed for runtime foot placement.
+The native sources are under `native/`; previews and validation are included.
+
+The walk remains unchanged. The sprint retains its front-knee float, extended
+rear push-off and independent heel/ball/toe peel. Terrain adaptation is a separate
+Hullscape runtime layer, not baked into these clips. The source GIFs show flat
+ground animation; they are not terrain or physics evidence. The release does not
+grant engine, physics, collider or final-art acceptance.
+
+To package the same selected bytes again, run
+`scripts/package-strokah-locomotion.py --derivative <tube-playtest-proxy-v1> --destination <new-directory>`.
+It verifies the selected source hashes and never edits animation assets. Publish
+a new immutable version for future changes; never overwrite a released key.
+
+## Archived release 1
+
+Release 1 remains frozen from the user-reviewed
 cockpit/feet proxy **v6** on 2026-10-28. Use it for basic animation and hitbox
 layout. It does not replace the detailed Strokah design or the original source
 fixture, and is not final art or a validated physics asset.
@@ -33,6 +66,7 @@ art bucket. From the Pacific Gym checkout in WSL:
 
 ```sh
 python3 scripts/restore-animation-dummy.py \
+  --manifest releases/strokah-animation-dummy-v1.json \
   --profile remote-engine-admin \
   --destination /mnt/d/PacificGym/assets/strokah-animation-dummy/v1
 ```

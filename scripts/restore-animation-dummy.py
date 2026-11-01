@@ -11,7 +11,7 @@ import zipfile
 from pathlib import Path, PurePosixPath
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_MANIFEST = ROOT / 'releases/strokah-animation-dummy-v1.json'
+DEFAULT_MANIFEST = ROOT / 'releases/strokah-animation-dummy-v2.json'
 
 
 def sha256(path):
